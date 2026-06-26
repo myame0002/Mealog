@@ -437,6 +437,127 @@ export default function HomeScreen() {
     await saveDayLog(selectedDate, updatedLogs);
   };
 
+  // Delete ingredient from recipe log (day-specific)
+  const handleDeleteIngredientFromLog = async (
+    logItemId: string,
+    ingredientId: string
+  ) => {
+    Alert.alert('材料の削除', 'この材料を削除しますか？', [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '削除',
+        style: 'destructive',
+        onPress: async () => {
+          const updatedLogs = logs.map((log) => {
+            if (log.id !== logItemId) return log;
+
+            const updatedIngs = log.ingredients?.filter(
+              (ing) => ing.ingredientId !== ingredientId
+            );
+
+            const tempLog = { ...log, ingredients: updatedIngs };
+            const updatedCalories = calculateItemCalories(tempLog);
+            
+            let updatedProtein = log.protein;
+            let updatedFat = log.fat;
+            let updatedCarbs = log.carbs;
+            
+            if (updatedIngs && updatedIngs.length > 0) {
+              const updatedPFC = calculateItemPFC(tempLog);
+              updatedProtein = updatedPFC.protein;
+              updatedFat = updatedPFC.fat;
+              updatedCarbs = updatedPFC.carbs;
+            }
+
+            return {
+              ...tempLog,
+              calories: updatedCalories,
+              protein: updatedProtein,
+              fat: updatedFat,
+              carbs: updatedCarbs,
+            };
+          });
+
+          setLogs(updatedLogs);
+          await saveDayLog(selectedDate, updatedLogs);
+        },
+      },
+    ]);
+  };
+
+  // Add ingredient to recipe log (day-specific)
+  const [showAddIngToRecipe, setShowAddIngToRecipe] = useState<string | null>(null);
+  const [selectedIngForRecipe, setSelectedIngForRecipe] = useState('');
+  const [recipeIngAmount, setRecipeIngAmount] = useState('');
+
+  const handleAddIngredientToLog = async (logItemId: string) => {
+    if (!selectedIngForRecipe || !recipeIngAmount.trim()) {
+      Alert.alert('入力エラー', '材料と量を入力してください。');
+      return;
+    }
+
+    const amount = parseInt(recipeIngAmount, 10);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('入力エラー', '正しいグラム数を入力してください。');
+      return;
+    }
+
+    const matchedIng = ingredients.find((i) => i.id === selectedIngForRecipe);
+    if (!matchedIng) {
+      Alert.alert('エラー', '材料が見つかりません。');
+      return;
+    }
+
+    const updatedLogs = logs.map((log) => {
+      if (log.id !== logItemId) return log;
+
+      // Check if ingredient already exists
+      const existingIndex = log.ingredients?.findIndex(
+        (ing) => ing.ingredientId === selectedIngForRecipe
+      );
+
+      let updatedIngs;
+      if (existingIndex !== undefined && existingIndex >= 0 && log.ingredients) {
+        // Update existing ingredient amount
+        updatedIngs = [...log.ingredients];
+        updatedIngs[existingIndex] = {
+          ...updatedIngs[existingIndex],
+          amount: amount,
+        };
+      } else {
+        // Add new ingredient
+        const newIng = {
+          ingredientId: matchedIng.id,
+          name: matchedIng.name,
+          amount: amount,
+          caloriesPer100g: matchedIng.caloriesPer100g,
+          proteinPer100g: matchedIng.proteinPer100g,
+          fatPer100g: matchedIng.fatPer100g,
+          carbsPer100g: matchedIng.carbsPer100g,
+        };
+        updatedIngs = log.ingredients ? [...log.ingredients, newIng] : [newIng];
+      }
+
+      const tempLog = { ...log, ingredients: updatedIngs };
+      const updatedCalories = calculateItemCalories(tempLog);
+      const updatedPFC = calculateItemPFC(tempLog);
+
+      return {
+        ...tempLog,
+        calories: updatedCalories,
+        protein: updatedPFC.protein,
+        fat: updatedPFC.fat,
+        carbs: updatedPFC.carbs,
+      };
+    });
+
+    setLogs(updatedLogs);
+    await saveDayLog(selectedDate, updatedLogs);
+    setShowAddIngToRecipe(null);
+    setSelectedIngForRecipe('');
+    setRecipeIngAmount('');
+  };
+
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -661,16 +782,84 @@ export default function HomeScreen() {
                         {/* ⚖️ Fine-Tuning Accordion for Recipes */}
                         {item.type === 'recipe' && isExpanded && item.ingredients && (
                           <View style={[styles.ingredientsContainer, { backgroundColor: '#F0FDF4' }]}>
-                            <Text style={[styles.ingredientsTitle, { color: colors.icon }]}>
-                              📊 材料グラム調整（今日のカレーは肉多めなど）
-                            </Text>
-                            {item.ingredients.map((ing) => {
+                            <View style={styles.ingredientsHeaderRow}>
+                              <Text style={[styles.ingredientsTitle, { color: colors.icon }]}>
+                                📊 材料の編集（その日限定）
+                              </Text>
+                              <TouchableOpacity
+                                style={[styles.addIngBtn, { backgroundColor: colors.tint }]}
+                                onPress={() => {
+                                  setShowAddIngToRecipe(item.id);
+                                  setSelectedIngForRecipe('');
+                                  setRecipeIngAmount('');
+                                }}>
+                                <Ionicons name="add" size={14} color="#fff" />
+                                <Text style={styles.addIngBtnText}>材料追加</Text>
+                              </TouchableOpacity>
+                            </View>
+
+                            {/* Add Ingredient Form (inline) */}
+                            {showAddIngToRecipe === item.id && (
+                              <View style={[styles.addIngForm, { backgroundColor: '#fff', borderColor: colors.tint }]}>
+                                <Text style={[styles.addIngFormTitle, { color: colors.text }]}>
+                                  新しい材料を追加
+                                </Text>
+                                <ScrollView style={styles.ingSelectorList} nestedScrollEnabled>
+                                  {ingredients.map((ing) => (
+                                    <TouchableOpacity
+                                      key={ing.id}
+                                      style={[
+                                        styles.ingSelectorItem,
+                                        selectedIngForRecipe === ing.id && { backgroundColor: colors.tint },
+                                      ]}
+                                      onPress={() => setSelectedIngForRecipe(ing.id)}>
+                                      <Text
+                                        style={{
+                                          color: selectedIngForRecipe === ing.id ? '#fff' : colors.text,
+                                          fontWeight: selectedIngForRecipe === ing.id ? 'bold' : 'normal',
+                                        }}>
+                                        {ing.name} ({ing.caloriesPer100g} kcal/100g)
+                                      </Text>
+                                    </TouchableOpacity>
+                                  ))}
+                                </ScrollView>
+                                <View style={styles.addIngAmountRow}>
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={[styles.tinyLabel, { color: colors.icon }]}>
+                                      量 (g)
+                                    </Text>
+                                    <TextInput
+                                      keyboardType="numeric"
+                                      style={[styles.formInput, { color: colors.text }]}
+                                      placeholder="例: 100"
+                                      placeholderTextColor={colors.icon}
+                                      value={recipeIngAmount}
+                                      onChangeText={setRecipeIngAmount}
+                                    />
+                                  </View>
+                                  <View style={styles.addIngActionRow}>
+                                    <TouchableOpacity
+                                      style={[styles.addIngCancelBtn, { backgroundColor: '#e5e7eb' }]}
+                                      onPress={() => setShowAddIngToRecipe(null)}>
+                                      <Text style={[styles.addIngBtnText, { color: colors.text }]}>キャンセル</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={[styles.addIngConfirmBtn, { backgroundColor: colors.tint }]}
+                                      onPress={() => handleAddIngredientToLog(item.id)}>
+                                      <Text style={[styles.addIngBtnText, { color: '#fff' }]}>追加</Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              </View>
+                            )}
+
+                            {item.ingredients.map((ing, index) => {
                               const calcKcal = Math.round((ing.amount * ing.caloriesPer100g) / 100);
                               return (
-                                <View key={ing.ingredientId} style={styles.ingredientRow}>
+                                <View key={`${ing.ingredientId}-${index}`} style={styles.ingredientRow}>
                                   {/* Top Row: Name and Calories */}
                                   <View style={styles.ingTopRow}>
-                                    <View>
+                                    <View style={{ flex: 1 }}>
                                       <Text style={[styles.ingName, { color: colors.text }]}>{ing.name}</Text>
                                       <Text style={[styles.ingKcalDetail, { color: colors.icon }]}>
                                         {ing.caloriesPer100g} kcal/100g
@@ -686,6 +875,11 @@ export default function HomeScreen() {
                                       <Text style={[styles.ingSubTotalPFC, { color: colors.icon }]}>
                                         P:{Math.round((ing.amount * ing.proteinPer100g) / 100)}g
                                       </Text>
+                                      <TouchableOpacity
+                                        style={styles.ingDeleteBtn}
+                                        onPress={() => handleDeleteIngredientFromLog(item.id, ing.ingredientId)}>
+                                        <Ionicons name="close-circle" size={18} color="#EF4444" />
+                                      </TouchableOpacity>
                                     </View>
                                   </View>
 
@@ -1295,10 +1489,76 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 10,
   },
+  ingredientsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   ingredientsTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    marginBottom: 8,
+  },
+  addIngBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addIngBtnText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  addIngForm: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  addIngFormTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  tinyLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  ingSelectorList: {
+    maxHeight: 120,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  ingSelectorItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#f2f2f7',
+  },
+  addIngAmountRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  addIngActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  addIngCancelBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  addIngConfirmBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   ingredientRow: {
     flexDirection: 'column',
@@ -1334,10 +1594,15 @@ const styles = StyleSheet.create({
   },
   ingSubTotalCol: {
     alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 8,
   },
   ingSubTotalPFC: {
     fontSize: 9,
     marginTop: 1,
+  },
+  ingDeleteBtn: {
+    padding: 2,
   },
   stepperBtn: {
     paddingHorizontal: 10,

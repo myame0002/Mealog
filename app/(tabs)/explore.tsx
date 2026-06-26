@@ -66,6 +66,10 @@ export default function ExploreScreen() {
   const [builderSelectedIngId, setBuilderSelectedIngId] = useState("");
   const [builderAmount, setBuilderAmount] = useState("");
   const [isSelectingIng, setIsSelectingIng] = useState(false);
+  
+  // Ingredient weight adjustment in recipe builder
+  const [editingIngWeightId, setEditingIngWeightId] = useState<string | null>(null);
+  const [tempIngWeight, setTempIngWeight] = useState("");
 
   useEffect(() => {
     loadData();
@@ -229,6 +233,40 @@ export default function ExploreScreen() {
     setRecSelectedIngs(
       recSelectedIngs.filter((item) => item.ingredientId !== ingId),
     );
+  };
+
+  const handleUpdateIngWeight = (ingId: string, newWeight: number) => {
+    const weight = Math.max(0, Math.round(newWeight));
+    setRecSelectedIngs(
+      recSelectedIngs.map((ing) =>
+        ing.ingredientId === ingId ? { ...ing, baseAmount: weight } : ing,
+      ),
+    );
+    // Also update the temp input if this ingredient is being edited
+    if (editingIngWeightId === ingId) {
+      setTempIngWeight(String(weight));
+    }
+  };
+
+  const handleStartEditWeight = (ingId: string, currentAmount: number) => {
+    setEditingIngWeightId(ingId);
+    setTempIngWeight(String(currentAmount));
+  };
+
+  const handleSaveWeightEdit = () => {
+    if (!editingIngWeightId || !tempIngWeight.trim()) {
+      setEditingIngWeightId(null);
+      return;
+    }
+
+    const newWeight = parseInt(tempIngWeight, 10);
+    if (isNaN(newWeight) || newWeight < 0) {
+      Alert.alert("入力エラー", "正しいグラム数を入力してください。");
+      return;
+    }
+
+    handleUpdateIngWeight(editingIngWeightId, newWeight);
+    setEditingIngWeightId(null);
   };
 
   const handleSaveRecipe = async () => {
@@ -472,7 +510,8 @@ export default function ExploreScreen() {
                       {ing.caloriesPer100g} kcal / 100g
                     </Text>
                     <Text style={[styles.tablePfcText, { color: colors.icon }]}>
-                      P: {ing.proteinPer100g}g / F: {ing.fatPer100g}g / C: {ing.carbsPer100g}g
+                      P: {ing.proteinPer100g}g / F: {ing.fatPer100g}g / C:{" "}
+                      {ing.carbsPer100g}g
                     </Text>
                   </View>
                   <View style={styles.actionRow}>
@@ -718,9 +757,10 @@ export default function ExploreScreen() {
                     const kcal = Math.round(
                       (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
                     );
+                    const isEditing = editingIngWeightId === ri.ingredientId;
                     return (
                       <View key={ri.ingredientId} style={styles.builderIngRow}>
-                        <View>
+                        <View style={{ flex: 1 }}>
                           <Text
                             style={[
                               styles.builderIngName,
@@ -729,26 +769,68 @@ export default function ExploreScreen() {
                           >
                             {ing ? ing.name : "不明"}
                           </Text>
-                          <Text
-                            style={[
-                              styles.builderIngCalText,
-                              { color: colors.icon },
-                            ]}
-                          >
-                            {ri.baseAmount}g ({kcal} kcal)
-                          </Text>
+                          {isEditing ? (
+                            <View style={styles.inlineWeightEditRow}>
+                              <TouchableOpacity
+                                style={styles.inlineStepperBtn}
+                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount - 10)}>
+                                <Text style={styles.inlineStepperText}>-10g</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.inlineStepperBtn}
+                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount - 1)}>
+                                <Text style={styles.inlineStepperText}>-1g</Text>
+                              </TouchableOpacity>
+                              <TextInput
+                                keyboardType="numeric"
+                                style={[styles.inlineWeightInput, { color: colors.text }]}
+                                value={tempIngWeight}
+                                onChangeText={setTempIngWeight}
+                                onBlur={handleSaveWeightEdit}
+                              />
+                              <Text style={[styles.inlineWeightUnit, { color: colors.icon }]}>g</Text>
+                              <TouchableOpacity
+                                style={styles.inlineStepperBtn}
+                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount + 1)}>
+                                <Text style={styles.inlineStepperText}>+1g</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={styles.inlineStepperBtn}
+                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount + 10)}>
+                                <Text style={styles.inlineStepperText}>+10g</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <Text
+                              style={[
+                                styles.builderIngCalText,
+                                { color: colors.icon },
+                              ]}
+                            >
+                              {ri.baseAmount}g ({kcal} kcal)
+                            </Text>
+                          )}
                         </View>
-                        <TouchableOpacity
-                          onPress={() =>
-                            handleRemoveIngFromRecipe(ri.ingredientId)
-                          }
-                        >
-                          <Ionicons
-                            name="close-circle-outline"
-                            size={20}
-                            color="#ff453a"
-                          />
-                        </TouchableOpacity>
+                        <View style={styles.builderIngActions}>
+                          {isEditing ? (
+                            <TouchableOpacity
+                              style={styles.saveWeightBtn}
+                              onPress={handleSaveWeightEdit}>
+                              <Ionicons name="checkmark" size={16} color="#fff" />
+                            </TouchableOpacity>
+                          ) : (
+                            <>
+                              <TouchableOpacity
+                                style={styles.editWeightBtn}
+                                onPress={() => handleStartEditWeight(ri.ingredientId, ri.baseAmount)}>
+                                <Ionicons name="create-outline" size={16} color={colors.tint} />
+                              </TouchableOpacity>
+                              <TouchableOpacity onPress={() => handleRemoveIngFromRecipe(ri.ingredientId)}>
+                                <Ionicons name="close-circle-outline" size={20} color="#ff453a" />
+                              </TouchableOpacity>
+                            </>
+                          )}
+                        </View>
                       </View>
                     );
                   })
@@ -784,7 +866,6 @@ export default function ExploreScreen() {
                       <Text style={[styles.tinyLabel, { color: colors.icon }]}>
                         食材名
                       </Text>
-                      {/* Using custom list selectors instead of a complicated picker dependency */}
                       <ScrollView
                         style={styles.miniScrollView}
                         nestedScrollEnabled={true}
@@ -1114,6 +1195,50 @@ const styles = StyleSheet.create({
   builderIngCalText: {
     fontSize: 11,
     marginTop: 2,
+  },
+  builderIngActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  editWeightBtn: {
+    padding: 4,
+  },
+  saveWeightBtn: {
+    padding: 4,
+    backgroundColor: Colors["light"].tint,
+    borderRadius: 4,
+  },
+  inlineWeightEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  inlineStepperBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#e5e7eb",
+  },
+  inlineStepperText: {
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  inlineWeightInput: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    fontSize: 12,
+    fontWeight: "bold",
+    width: 50,
+    textAlign: "center",
+  },
+  inlineWeightUnit: {
+    fontSize: 10,
+    fontWeight: "bold",
   },
   inlineSelectorCard: {
     borderRadius: 16,
