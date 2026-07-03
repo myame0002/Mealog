@@ -70,6 +70,7 @@ const KEYS = {
   RECIPES: 'mealog_master_recipes',
   PRODUCTS: 'mealog_master_products',
   DAY_LOG_PREFIX: 'mealog_day_',
+  DAILY_TARGETS: 'mealog_daily_targets',
 };
 
 // --- INITIAL SEED DATA ---
@@ -318,6 +319,48 @@ export const saveDayLog = async (date: string, items: LogItem[]): Promise<void> 
     await AsyncStorage.setItem(`${KEYS.DAY_LOG_PREFIX}${date}`, JSON.stringify(items));
   } catch (error) {
     console.error('saveDayLog error:', error);
+    throw error;
+  }
+};
+
+// --- DAILY TARGETS API ---
+
+export interface DailyTargets {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
+export const getDailyTargets = async (): Promise<DailyTargets> => {
+  try {
+    const data = await AsyncStorage.getItem(KEYS.DAILY_TARGETS);
+    if (data) {
+      return JSON.parse(data);
+    }
+    // Default values
+    return {
+      calories: 2000,
+      protein: 50,
+      fat: 50,
+      carbs: 250,
+    };
+  } catch (error) {
+    console.error('getDailyTargets error:', error);
+    return {
+      calories: 2000,
+      protein: 50,
+      fat: 50,
+      carbs: 250,
+    };
+  }
+};
+
+export const saveDailyTargets = async (targets: DailyTargets): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(KEYS.DAILY_TARGETS, JSON.stringify(targets));
+  } catch (error) {
+    console.error('saveDailyTargets error:', error);
     throw error;
   }
 };

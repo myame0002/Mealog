@@ -13,10 +13,13 @@ const MEAL_TYPES = [
 type CaloriesProgressProps = {
   logs: LogItem[];
   dailyTarget: number;
+  proteinTarget: number;
+  fatTarget: number;
+  carbsTarget: number;
   colors: any;
 };
 
-export default function CaloriesProgress({ logs, dailyTarget, colors }: CaloriesProgressProps) {
+export default function CaloriesProgress({ logs, dailyTarget, proteinTarget, fatTarget, carbsTarget, colors }: CaloriesProgressProps) {
   const mealCalories = useMemo(() => {
     const breakdown = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
     logs.forEach((item) => {
@@ -93,24 +96,33 @@ export default function CaloriesProgress({ logs, dailyTarget, colors }: Calories
         ))}
       </View>
 
-      {/* PFC Breakdown */}
+      {/* PFC Breakdown with targets */}
       <View style={styles.pfcBreakdownRow}>
         <View style={styles.pfcItem}>
           <Text style={[styles.pfcLabel, { color: colors.icon }]}>たんぱく質</Text>
-          <Text style={[styles.pfcValue, { color: colors.text }]}>
+          <Text style={[styles.pfcValue, { color: totalPFC.protein > proteinTarget ? '#ff453a' : colors.text }]}>
             {Math.round(totalPFC.protein)}<Text style={styles.pfcUnit}>g</Text>
+          </Text>
+          <Text style={[styles.pfcTargetText, { color: totalPFC.protein > proteinTarget ? '#ff453a' : colors.icon }]}>
+            / {proteinTarget}g
           </Text>
         </View>
         <View style={styles.pfcItem}>
           <Text style={[styles.pfcLabel, { color: colors.icon }]}>脂質</Text>
-          <Text style={[styles.pfcValue, { color: colors.text }]}>
+          <Text style={[styles.pfcValue, { color: totalPFC.fat > fatTarget ? '#ff453a' : colors.text }]}>
             {Math.round(totalPFC.fat)}<Text style={styles.pfcUnit}>g</Text>
+          </Text>
+          <Text style={[styles.pfcTargetText, { color: totalPFC.fat > fatTarget ? '#ff453a' : colors.icon }]}>
+            / {fatTarget}g
           </Text>
         </View>
         <View style={styles.pfcItem}>
           <Text style={[styles.pfcLabel, { color: colors.icon }]}>炭水化物</Text>
-          <Text style={[styles.pfcValue, { color: colors.text }]}>
+          <Text style={[styles.pfcValue, { color: totalPFC.carbs > carbsTarget ? '#ff453a' : colors.text }]}>
             {Math.round(totalPFC.carbs)}<Text style={styles.pfcUnit}>g</Text>
+          </Text>
+          <Text style={[styles.pfcTargetText, { color: totalPFC.carbs > carbsTarget ? '#ff453a' : colors.icon }]}>
+            / {carbsTarget}g
           </Text>
         </View>
       </View>
@@ -225,5 +237,10 @@ const styles = StyleSheet.create({
   pfcUnit: {
     fontSize: 9,
     fontWeight: '500',
+  },
+  pfcTargetText: {
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 1,
   },
 });
