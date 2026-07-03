@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ interface RecipeBuilderModalProps {
   onSelectIngredient: (ingId: string) => void;
   onBuilderAmountChange: (text: string) => void;
   onCancelIngSelection: () => void;
+  onStartIngSelection: () => void;
 }
 
 export function RecipeBuilderModal({
@@ -59,8 +60,10 @@ export function RecipeBuilderModal({
   onSelectIngredient,
   onBuilderAmountChange,
   onCancelIngSelection,
+  onStartIngSelection,
 }: RecipeBuilderModalProps) {
   const colors = Colors["light"];
+  const [ingredientSearchQuery, setIngredientSearchQuery] = useState("");
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -109,18 +112,18 @@ export function RecipeBuilderModal({
               onChangeText={onRecipeNameChange}
             />
 
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.formLabel, { color: colors.text }]}>
-                配合する材料
-              </Text>
-              <TouchableOpacity
-                style={[styles.smallAddBtn, { backgroundColor: colors.tint }]}
-                onPress={() => onAddIngToRecipe}
-              >
-                <Ionicons name="add" size={14} color="#fff" />
-                <Text style={styles.smallAddBtnText}>材料追加</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.formLabel, { color: colors.text }]}>
+                  配合する材料
+                </Text>
+                <TouchableOpacity
+                  style={[styles.smallAddBtn, { backgroundColor: colors.tint }]}
+                  onPress={onStartIngSelection}
+                >
+                  <Ionicons name="add" size={14} color="#fff" />
+                  <Text style={styles.smallAddBtnText}>材料追加</Text>
+                </TouchableOpacity>
+              </View>
 
             {/* List of currently selected ingredients in the recipe builder */}
             <View
@@ -256,46 +259,67 @@ export function RecipeBuilderModal({
                     <Text style={[styles.tinyLabel, { color: colors.icon }]}>
                       食材名
                     </Text>
+                    <View style={styles.ingredientSearchBar}>
+                      <Ionicons name="search-outline" size={14} color={colors.icon} />
+                      <TextInput
+                        style={[styles.ingredientSearchInput, { color: colors.text }]}
+                        placeholder="食材を検索..."
+                        placeholderTextColor={colors.icon}
+                        value={ingredientSearchQuery}
+                        onChangeText={setIngredientSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      {ingredientSearchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setIngredientSearchQuery("")}>
+                          <Ionicons name="close-circle" size={14} color={colors.icon} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     <ScrollView
                       style={styles.miniScrollView}
                       nestedScrollEnabled={true}
                     >
-                      {ingredients.map((ing) => {
-                        const isSelected = builderSelectedIngId === ing.id;
-                        return (
-                          <TouchableOpacity
-                            key={ing.id}
-                            style={[
-                              styles.miniIngSelectRow,
-                              isSelected && { backgroundColor: colors.tint },
-                            ]}
-                            onPress={() => onSelectIngredient(ing.id)}
-                          >
-                            <View>
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: isSelected ? "#fff" : colors.text,
-                                  fontWeight: isSelected ? "bold" : "normal",
-                                }}
-                              >
-                                {ing.name}
-                              </Text>
-                              {ing.servingSize && (
+                      {ingredients
+                        .filter((ing) =>
+                          ing.name.toLowerCase().includes(ingredientSearchQuery.toLowerCase())
+                        )
+                        .map((ing) => {
+                          const isSelected = builderSelectedIngId === ing.id;
+                          return (
+                            <TouchableOpacity
+                              key={ing.id}
+                              style={[
+                                styles.miniIngSelectRow,
+                                isSelected && { backgroundColor: colors.tint },
+                              ]}
+                              onPress={() => onSelectIngredient(ing.id)}
+                            >
+                              <View>
                                 <Text
                                   style={{
-                                    fontSize: 10,
-                                    color: isSelected ? "rgba(255,255,255,0.8)" : colors.icon,
-                                    marginTop: 2,
+                                    fontSize: 12,
+                                    color: isSelected ? "#fff" : colors.text,
+                                    fontWeight: isSelected ? "bold" : "normal",
                                   }}
                                 >
-                                  目安: {ing.servingSize} ({ing.servingAmount}g)
+                                  {ing.name}
                                 </Text>
-                              )}
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })}
+                                {ing.servingSize && (
+                                  <Text
+                                    style={{
+                                      fontSize: 10,
+                                      color: isSelected ? "rgba(255,255,255,0.8)" : colors.icon,
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    目安: {ing.servingSize} ({ing.servingAmount}g)
+                                  </Text>
+                                )}
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
                     </ScrollView>
                   </View>
                 )}
@@ -540,6 +564,23 @@ const styles = StyleSheet.create({
   builderQtyRow: {
     flexDirection: "row",
     gap: 10,
+  },
+  ingredientSearchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginBottom: 8,
+    gap: 6,
+  },
+  ingredientSearchInput: {
+    flex: 1,
+    fontSize: 13,
+    padding: 0,
   },
   inlineActionRow: {
     flexDirection: "row",

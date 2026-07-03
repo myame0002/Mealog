@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -43,6 +44,9 @@ export default function ExploreScreen() {
   // Core Data Lists
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modals visibility
   const [ingModalVisible, setIngModalVisible] = useState(false);
@@ -88,6 +92,16 @@ export default function ExploreScreen() {
     setRecipes(recs);
     setLoading(false);
   };
+
+  // Filter recipes based on search query
+  const filteredRecipes = recipes.filter((recipe) =>
+    recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter ingredients based on search query
+  const filteredIngredients = ingredients.filter((ingredient) =>
+    ingredient.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // --- INGREDIENT ACTIONS ---
 
@@ -197,8 +211,9 @@ export default function ExploreScreen() {
     setEditingRecipeId(null);
     setRecName("");
     setRecSelectedIngs([]);
-    setBuilderSelectedIngId(ingredients[0]?.id || "");
+    setBuilderSelectedIngId("");
     setBuilderAmount("100");
+    setIsSelectingIng(false);
     setRecModalVisible(true);
   };
 
@@ -206,16 +221,19 @@ export default function ExploreScreen() {
     setEditingRecipeId(recipe.id);
     setRecName(recipe.name);
     setRecSelectedIngs([...recipe.ingredients]);
-    setBuilderSelectedIngId(ingredients[0]?.id || "");
+    setBuilderSelectedIngId("");
     setBuilderAmount("100");
+    setIsSelectingIng(false);
     setRecModalVisible(true);
   };
 
   const handleAddIngToRecipe = () => {
+    // If no ingredient selected, show error
     if (!builderSelectedIngId) {
       Alert.alert("エラー", "材料を選択してください。");
       return;
     }
+    
     const amt = parseInt(builderAmount, 10);
     if (isNaN(amt) || amt <= 0) {
       Alert.alert("入力エラー", "正しいグラム数を入力してください。");
@@ -369,6 +387,31 @@ export default function ExploreScreen() {
         <Ionicons name="refresh" size={20} color={colors.tint} />
       </TouchableOpacity>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
+          <Ionicons name="search-outline" size={16} color={colors.icon} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder={
+              activeTab === "recipes"
+                ? "レシピを検索..."
+                : "食材を検索..."
+            }
+            placeholderTextColor={colors.icon}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={16} color={colors.icon} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Segmented Tab Controller */}
       <TabController
         activeTab={activeTab}
@@ -400,15 +443,26 @@ export default function ExploreScreen() {
         {activeTab === "recipes" ? (
           // 🍛 Recipes List View
           <View>
-            {recipes.map((rec) => (
-              <RecipeCard
-                key={rec.id}
-                recipe={rec}
-                ingredients={ingredients}
-                onEdit={handleOpenEditRecipe}
-                onDelete={handleDeleteRecipe}
-              />
-            ))}
+            {filteredRecipes.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={48} color={colors.icon} />
+                <Text style={[styles.emptyStateText, { color: colors.icon }]}>
+                  {searchQuery.length > 0
+                    ? "一致するレシピが見つかりません"
+                    : "レシピがありません"}
+                </Text>
+              </View>
+            ) : (
+              filteredRecipes.map((rec) => (
+                <RecipeCard
+                  key={rec.id}
+                  recipe={rec}
+                  ingredients={ingredients}
+                  onEdit={handleOpenEditRecipe}
+                  onDelete={handleDeleteRecipe}
+                />
+              ))
+            )}
           </View>
         ) : (
           // 🥩 Ingredients List View
@@ -418,16 +472,27 @@ export default function ExploreScreen() {
               { backgroundColor: "#fff", borderColor: "#e5e5ea" },
             ]}
           >
-            {ingredients.map((ing, idx) => (
-              <IngredientRow
-                key={ing.id}
-                ingredient={ing}
-                index={idx}
-                totalCount={ingredients.length}
-                onEdit={handleOpenEditIng}
-                onDelete={handleDeleteIngredient}
-              />
-            ))}
+            {filteredIngredients.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={48} color={colors.icon} />
+                <Text style={[styles.emptyStateText, { color: colors.icon }]}>
+                  {searchQuery.length > 0
+                    ? "一致する食材が見つかりません"
+                    : "食材がありません"}
+                </Text>
+              </View>
+            ) : (
+              filteredIngredients.map((ing, idx) => (
+                <IngredientRow
+                  key={ing.id}
+                  ingredient={ing}
+                  index={idx}
+                  totalCount={filteredIngredients.length}
+                  onEdit={handleOpenEditIng}
+                  onDelete={handleDeleteIngredient}
+                />
+              ))
+            )}
           </View>
         )}
       </ScrollView>
@@ -496,6 +561,7 @@ export default function ExploreScreen() {
         onSelectIngredient={setBuilderSelectedIngId}
         onBuilderAmountChange={setBuilderAmount}
         onCancelIngSelection={() => setIsSelectingIng(false)}
+        onStartIngSelection={() => setIsSelectingIng(true)}
       />
     </View>
   );
@@ -570,5 +636,35 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
     }),
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    fontWeight: "500",
   },
 });
