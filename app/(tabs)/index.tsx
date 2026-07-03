@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -82,6 +83,15 @@ export default function HomeScreen() {
       setLoading(false);
     };
     startup();
+
+    // アプリがフォアグラウンドに戻ったときにマスタデータを再読み込み
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        loadMasterData();
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   const loadMasterData = async () => {
@@ -250,6 +260,12 @@ export default function HomeScreen() {
     setProductModalVisible(false);
   };
 
+  const handleOpenProductModal = async () => {
+    // モーダルを開く前に最新のマスタデータを読み込む
+    await loadMasterData();
+    setProductModalVisible(true);
+  };
+
   const handleAddRecipeFood = async (recipe: Recipe) => {
     // Generate snapshot list of ingredients with their current master calorie values
     const logIngredients = recipe.ingredients.map((recIng) => {
@@ -288,6 +304,12 @@ export default function HomeScreen() {
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
     setRecipeModalVisible(false);
+  };
+
+  const handleOpenRecipeModal = async () => {
+    // モーダルを開く前に最新のマスタデータを読み込む
+    await loadMasterData();
+    setRecipeModalVisible(true);
   };
 
   // Product Selector Component
@@ -333,7 +355,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.productListContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.productListContainer}
+          showsVerticalScrollIndicator={false}>
           {filteredProducts.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="storefront-outline" size={48} color="#D1D5DB" />
@@ -958,31 +982,31 @@ export default function HomeScreen() {
                   <Text style={[styles.mealActionText, { color: colors.text }]}>手動追加</Text>
                 </TouchableOpacity>
 
-               <TouchableOpacity
-                   style={[
-                     styles.mealActionBtn,
+                <TouchableOpacity
+                  style={[
+                    styles.mealActionBtn,
                     { backgroundColor: '#f2f2f7' },
-                   ]}
-                   onPress={() => {
-                     setActiveMealType(meal.key);
-                     setRecipeModalVisible(true);
-                   }}>
-                   <Ionicons name="list-outline" size={14} color={colors.tint} />
-                   <Text style={[styles.mealActionText, { color: colors.text }]}>レシピ追加</Text>
-                 </TouchableOpacity>
+                  ]}
+                  onPress={() => {
+                    setActiveMealType(meal.key);
+                    handleOpenRecipeModal();
+                  }}>
+                  <Ionicons name="list-outline" size={14} color={colors.tint} />
+                  <Text style={[styles.mealActionText, { color: colors.text }]}>レシピ追加</Text>
+                </TouchableOpacity>
 
-                 <TouchableOpacity
-                   style={[
-                     styles.mealActionBtn,
+                <TouchableOpacity
+                  style={[
+                    styles.mealActionBtn,
                     { backgroundColor: '#f2f2f7' },
-                   ]}
-                   onPress={() => {
-                     setActiveMealType(meal.key);
-                     setProductModalVisible(true);
-                   }}>
-                   <Ionicons name="storefront-outline" size={14} color={colors.tint} />
-                   <Text style={[styles.mealActionText, { color: colors.text }]}>市販品</Text>
-                 </TouchableOpacity>
+                  ]}
+                  onPress={() => {
+                    setActiveMealType(meal.key);
+                    handleOpenProductModal();
+                  }}>
+                  <Ionicons name="storefront-outline" size={14} color={colors.tint} />
+                  <Text style={[styles.mealActionText, { color: colors.text }]}>市販品</Text>
+                </TouchableOpacity>
               </View>
             </View>
           );
@@ -1008,14 +1032,14 @@ export default function HomeScreen() {
               <View style={styles.modalForm}>
                 <Text style={[styles.formLabel, { color: colors.text }]}>料理名</Text>
                 <TextInput
-                    style={[
-                      styles.formInput,
-                      {
-                        color: colors.text,
-                        backgroundColor: '#f2f2f7',
-                        borderColor: '#e5e5ea',
-                      },
-                    ]}
+                  style={[
+                    styles.formInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: '#f2f2f7',
+                      borderColor: '#e5e5ea',
+                    },
+                  ]}
                   placeholder="例: サラダ、チキンソテー"
                   placeholderTextColor={colors.icon}
                   value={manualName}
@@ -1024,14 +1048,14 @@ export default function HomeScreen() {
 
                 <Text style={[styles.formLabel, { color: colors.text }]}>カロリー (kcal)</Text>
                 <TextInput
-                    style={[
-                      styles.formInput,
-                      {
-                        color: colors.text,
-                        backgroundColor: '#f2f2f7',
-                        borderColor: '#e5e5ea',
-                      },
-                    ]}
+                  style={[
+                    styles.formInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: '#f2f2f7',
+                      borderColor: '#e5e5ea',
+                    },
+                  ]}
                   keyboardType="numeric"
                   placeholder="例: 350"
                   placeholderTextColor={colors.icon}
@@ -1041,14 +1065,14 @@ export default function HomeScreen() {
 
                 <Text style={[styles.formLabel, { color: colors.text }]}>たんぱく質 (g)</Text>
                 <TextInput
-                    style={[
-                      styles.formInput,
-                      {
-                        color: colors.text,
-                        backgroundColor: '#f2f2f7',
-                        borderColor: '#e5e5ea',
-                      },
-                    ]}
+                  style={[
+                    styles.formInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: '#f2f2f7',
+                      borderColor: '#e5e5ea',
+                    },
+                  ]}
                   keyboardType="numeric"
                   placeholder="例: 25"
                   placeholderTextColor={colors.icon}
@@ -1058,14 +1082,14 @@ export default function HomeScreen() {
 
                 <Text style={[styles.formLabel, { color: colors.text }]}>脂質 (g)</Text>
                 <TextInput
-                    style={[
-                      styles.formInput,
-                      {
-                        color: colors.text,
-                        backgroundColor: '#f2f2f7',
-                        borderColor: '#e5e5ea',
-                      },
-                    ]}
+                  style={[
+                    styles.formInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: '#f2f2f7',
+                      borderColor: '#e5e5ea',
+                    },
+                  ]}
                   keyboardType="numeric"
                   placeholder="例: 10"
                   placeholderTextColor={colors.icon}
@@ -1075,14 +1099,14 @@ export default function HomeScreen() {
 
                 <Text style={[styles.formLabel, { color: colors.text }]}>炭水化物 (g)</Text>
                 <TextInput
-                    style={[
-                      styles.formInput,
-                      {
-                        color: colors.text,
-                        backgroundColor: '#f2f2f7',
-                        borderColor: '#e5e5ea',
-                      },
-                    ]}
+                  style={[
+                    styles.formInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: '#f2f2f7',
+                      borderColor: '#e5e5ea',
+                    },
+                  ]}
                   keyboardType="numeric"
                   placeholder="例: 40"
                   placeholderTextColor={colors.icon}
@@ -1177,10 +1201,10 @@ export default function HomeScreen() {
                       key={recipe.id}
                       style={[
                         styles.recipeCard,
-                          {
-                            backgroundColor: '#f2f2f7',
-                            borderColor: '#e5e5ea',
-                          },
+                        {
+                          backgroundColor: '#f2f2f7',
+                          borderColor: '#e5e5ea',
+                        },
                       ]}
                       onPress={() => handleAddRecipeFood(recipe)}>
                       <View>
