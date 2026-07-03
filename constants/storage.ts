@@ -9,6 +9,8 @@ export interface Ingredient {
   proteinPer100g: number;      // たんぱく質 (g/100g)
   fatPer100g: number;          // 脂質 (g/100g)
   carbsPer100g: number;        // 炭水化物 (g/100g)
+  servingSize?: string;        // 例: "1本", "1個", "100g" (オプション)
+  servingAmount?: number;      // その分量のグラム数 (例: 150) (オプション)
 }
 
 export interface RecipeIngredient {
@@ -71,56 +73,49 @@ const KEYS = {
 };
 
 // --- INITIAL SEED DATA ---
-const SEED_PRODUCTS: Product[] = [
-  { id: 'prod_1', name: 'サラダチキン (プレーン)', brand: 'ファミリーマート', caloriesPerServing: 113, servingSize: '110g', proteinPerServing: 23, fatPerServing: 1.1, carbsPerServing: 0 },
-  { id: 'prod_2', name: 'ギリシャヨーグルト (無糖)', brand: 'オイコス', caloriesPerServing: 75, servingSize: '113g', proteinPerServing: 10, fatPerServing: 0.7, carbsPerServing: 4 },
-  { id: 'prod_3', name: 'おにぎり (鮭)', brand: 'コンビニ各社', caloriesPerServing: 175, servingSize: '1個', proteinPerServing: 4.5, fatPerServing: 0.5, carbsPerServing: 36 },
-  { id: 'prod_4', name: 'プロテインバー', brand: 'SOYJOY', caloriesPerServing: 142, servingSize: '1本', proteinPerServing: 8, fatPerServing: 6, carbsPerServing: 16 },
-  { id: 'prod_5', name: 'バナナ', brand: '', caloriesPerServing: 86, servingSize: '1本(中)', proteinPerServing: 1.1, fatPerServing: 0.2, carbsPerServing: 21 },
-];
+const SEED_PRODUCTS: Product[] = [];
 
 const SEED_INGREDIENTS: Ingredient[] = [
-  { id: 'ing_1', name: '鶏むね肉 (皮なし)', caloriesPer100g: 108, proteinPer100g: 23, fatPer100g: 1, carbsPer100g: 0 },
-  { id: 'ing_2', name: '白米 (炊きあがり)', caloriesPer100g: 156, proteinPer100g: 2.5, fatPer100g: 0.3, carbsPer100g: 36 },
-  { id: 'ing_3', name: '卵 (中玉)', caloriesPer100g: 142, proteinPer100g: 12, fatPer100g: 9.5, carbsPer100g: 0.5 },
-  { id: 'ing_4', name: 'オリーブオイル', caloriesPer100g: 884, proteinPer100g: 0, fatPer100g: 100, carbsPer100g: 0 },
-  { id: 'ing_5', name: '牛もも肉 (赤身)', caloriesPer100g: 182, proteinPer100g: 20, fatPer100g: 10, carbsPer100g: 0 },
-  { id: 'ing_6', name: 'ブロッコリー', caloriesPer100g: 37, proteinPer100g: 4.5, fatPer100g: 0.5, carbsPer100g: 6 },
-  { id: 'ing_7', name: '鮭 (生)', caloriesPer100g: 124, proteinPer100g: 22, fatPer100g: 4, carbsPer100g: 0 },
-  { id: 'ing_8', name: 'アボカド', caloriesPer100g: 160, proteinPer100g: 2, fatPer100g: 15, carbsPer100g: 6 },
-  { id: 'ing_9', name: '納豆', caloriesPer100g: 190, proteinPer100g: 16, fatPer100g: 9, carbsPer100g: 6 },
+  { id: 'ing_1', name: 'にんじん', caloriesPer100g: 35, proteinPer100g: 0.7, fatPer100g: 0.1, carbsPer100g: 8.7, servingSize: '1本(中)', servingAmount: 100 },
+  { id: 'ing_2', name: 'じゃがいも', caloriesPer100g: 71, proteinPer100g: 1.5, fatPer100g: 0.1, carbsPer100g: 17.3, servingSize: '1個(中)', servingAmount: 150 },
+  { id: 'ing_3', name: 'たまねぎ', caloriesPer100g: 33, proteinPer100g: 1.0, fatPer100g: 0.1, carbsPer100g: 8.4, servingSize: '1個(中)', servingAmount: 150 },
+  { id: 'ing_4', name: '卵', caloriesPer100g: 142, proteinPer100g: 12.2, fatPer100g: 10.2, carbsPer100g: 0.4, servingSize: '1個(中玉)', servingAmount: 50 },
+  { id: 'ing_5', name: 'キャベツ', caloriesPer100g: 21, proteinPer100g: 1.3, fatPer100g: 0.1, carbsPer100g: 4.9, servingSize: '1/4個', servingAmount: 200 },
+  { id: 'ing_6', name: '白米', caloriesPer100g: 156, proteinPer100g: 2.5, fatPer100g: 0.3, carbsPer100g: 37.1, servingSize: '1膳', servingAmount: 150 },
+  { id: 'ing_7', name: '鶏もも肉', caloriesPer100g: 190, proteinPer100g: 16.6, fatPer100g: 14.2, carbsPer100g: 0.0, servingSize: '1枚', servingAmount: 200 },
+  { id: 'ing_8', name: '塩', caloriesPer100g: 0, proteinPer100g: 0.0, fatPer100g: 0.0, carbsPer100g: 0.0, servingSize: '小さじ1', servingAmount: 6 },
+  { id: 'ing_9', name: 'こしょう', caloriesPer100g: 312, proteinPer100g: 11.1, fatPer100g: 4.9, carbsPer100g: 66.4, servingSize: '小さじ1', servingAmount: 2 },
+  { id: 'ing_10', name: '砂糖', caloriesPer100g: 391, proteinPer100g: 0.0, fatPer100g: 0.0, carbsPer100g: 99.3, servingSize: '大さじ1', servingAmount: 10 },
+  { id: 'ing_11', name: 'ソース', caloriesPer100g: 125, proteinPer100g: 0.7, fatPer100g: 0.1, carbsPer100g: 30.1, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_12', name: 'ケチャップ', caloriesPer100g: 105, proteinPer100g: 1.7, fatPer100g: 0.2, carbsPer100g: 25.8, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_13', name: 'マヨネーズ', caloriesPer100g: 668, proteinPer100g: 1.3, fatPer100g: 72.3, carbsPer100g: 2.0, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_14', name: '味の素', caloriesPer100g: 281, proteinPer100g: 45.8, fatPer100g: 0.0, carbsPer100g: 26.1, servingSize: '小さじ1', servingAmount: 3 },
+  { id: 'ing_15', name: 'コンソメ(顆粒)', caloriesPer100g: 214, proteinPer100g: 9.0, fatPer100g: 1.2, carbsPer100g: 41.8, servingSize: '小さじ1', servingAmount: 3 },
+  { id: 'ing_16', name: '中華あじ', caloriesPer100g: 190, proteinPer100g: 11.0, fatPer100g: 0.6, carbsPer100g: 36.0, servingSize: '小さじ1', servingAmount: 3 },
+  { id: 'ing_17', name: '鶏がらスープの素', caloriesPer100g: 192, proteinPer100g: 8.9, fatPer100g: 1.0, carbsPer100g: 37.0, servingSize: '小さじ1', servingAmount: 3 },
+  { id: 'ing_18', name: 'めんつゆ', caloriesPer100g: 121, proteinPer100g: 4.1, fatPer100g: 0.0, carbsPer100g: 23.3, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_19', name: '白だし', caloriesPer100g: 53, proteinPer100g: 3.1, fatPer100g: 0.0, carbsPer100g: 8.5, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_20', name: '醤油', caloriesPer100g: 77, proteinPer100g: 7.7, fatPer100g: 0.0, carbsPer100g: 10.1, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_21', name: 'みそ', caloriesPer100g: 182, proteinPer100g: 11.6, fatPer100g: 4.2, carbsPer100g: 24.3, servingSize: '大さじ1', servingAmount: 18 },
+  { id: 'ing_22', name: 'オイスターソース', caloriesPer100g: 137, proteinPer100g: 5.3, fatPer100g: 0.1, carbsPer100g: 28.7, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_23', name: 'コチュジャン', caloriesPer100g: 246, proteinPer100g: 4.8, fatPer100g: 1.8, carbsPer100g: 52.8, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_24', name: 'テンメンジャン', caloriesPer100g: 255, proteinPer100g: 6.5, fatPer100g: 6.0, carbsPer100g: 43.8, servingSize: '大さじ1', servingAmount: 15 },
+  { id: 'ing_25', name: 'トウバンジャン', caloriesPer100g: 49, proteinPer100g: 4.5, fatPer100g: 2.4, carbsPer100g: 5.4, servingSize: '小さじ1', servingAmount: 5 },
+  { id: 'ing_26', name: '一味唐辛子', caloriesPer100g: 413, proteinPer100g: 12.8, fatPer100g: 11.4, carbsPer100g: 64.3, servingSize: '小さじ1', servingAmount: 2 },
+  { id: 'ing_27', name: '辣油', caloriesPer100g: 853, proteinPer100g: 0.1, fatPer100g: 94.2, carbsPer100g: 3.5, servingSize: '小さじ1', servingAmount: 5 },
+  { id: 'ing_28', name: 'きざみのり', caloriesPer100g: 354, proteinPer100g: 41.4, fatPer100g: 3.7, carbsPer100g: 43.4, servingSize: '1枚', servingAmount: 1 },
+  { id: 'ing_29', name: '唐辛子(輪切り)', caloriesPer100g: 413, proteinPer100g: 12.8, fatPer100g: 11.4, carbsPer100g: 64.3, servingSize: '小さじ1', servingAmount: 2 },
+  { id: 'ing_30', name: 'いりごま', caloriesPer100g: 605, proteinPer100g: 20.3, fatPer100g: 54.2, carbsPer100g: 18.5, servingSize: '大さじ1', servingAmount: 10 },
+  { id: 'ing_31', name: '青さ粉', caloriesPer100g: 215, proteinPer100g: 19.1, fatPer100g: 1.0, carbsPer100g: 47.7, servingSize: '大さじ1', servingAmount: 2 },
+  { id: 'ing_32', name: 'かつお節', caloriesPer100g: 351, proteinPer100g: 77.1, fatPer100g: 5.7, carbsPer100g: 0.8, servingSize: '大さじ1', servingAmount: 5 },
+  { id: 'ing_33', name: '天かす', caloriesPer100g: 607, proteinPer100g: 7.4, fatPer100g: 47.5, carbsPer100g: 37.6, servingSize: '大さじ1', servingAmount: 10 },
+  { id: 'ing_34', name: 'サラダ油', caloriesPer100g: 884, proteinPer100g: 0.0, fatPer100g: 100.0, carbsPer100g: 0.0, servingSize: '大さじ1', servingAmount: 13 },
+  { id: 'ing_35', name: 'オリーブオイル', caloriesPer100g: 884, proteinPer100g: 0.0, fatPer100g: 100.0, carbsPer100g: 0.0, servingSize: '大さじ1', servingAmount: 13 },
+  { id: 'ing_36', name: 'ごま油', caloriesPer100g: 884, proteinPer100g: 0.0, fatPer100g: 100.0, carbsPer100g: 0.0, servingSize: '大さじ1', servingAmount: 13 },
+  { id: 'ing_37', name: 'みりん', caloriesPer100g: 241, proteinPer100g: 0.3, fatPer100g: 0.0, carbsPer100g: 43.2, servingSize: '大さじ1', servingAmount: 15 },
 ];
 
-const SEED_RECIPES: Recipe[] = [
-  {
-    id: 'rec_1',
-    name: '鶏むね肉とライス温野菜プレート',
-    ingredients: [
-      { ingredientId: 'ing_1', baseAmount: 150 }, // 鶏むね肉 150g
-      { ingredientId: 'ing_2', baseAmount: 200 }, // 白米 200g
-      { ingredientId: 'ing_6', baseAmount: 100 }, // ブロッコリー 100g
-      { ingredientId: 'ing_4', baseAmount: 5 },   // オリーブオイル 5g
-    ],
-  },
-  {
-    id: 'rec_2',
-    name: '卵かけご飯納豆添え',
-    ingredients: [
-      { ingredientId: 'ing_2', baseAmount: 150 }, // 白米 150g
-      { ingredientId: 'ing_3', baseAmount: 50 },  // 卵 50g
-      { ingredientId: 'ing_9', baseAmount: 50 },  // 納豆 50g
-    ],
-  },
-  {
-    id: 'rec_3',
-    name: 'サーモンとアボカドのヘルシー丼',
-    ingredients: [
-      { ingredientId: 'ing_7', baseAmount: 120 }, // 鮭 120g
-      { ingredientId: 'ing_8', baseAmount: 80 },  // アボカド 80g
-      { ingredientId: 'ing_2', baseAmount: 150 }, // 白米 150g
-    ],
-  },
-];
+const SEED_RECIPES: Recipe[] = [];
 
 // --- HELPER FUNCTIONS ---
 

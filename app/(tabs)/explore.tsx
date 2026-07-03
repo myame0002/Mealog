@@ -20,6 +20,7 @@ import {
   deleteRecipe,
   getIngredients,
   getRecipes,
+  initStorage,
   Ingredient,
   Recipe,
   RecipeIngredient,
@@ -54,6 +55,8 @@ export default function ExploreScreen() {
   const [ingProtein, setIngProtein] = useState("");
   const [ingFat, setIngFat] = useState("");
   const [ingCarbs, setIngCarbs] = useState("");
+  const [ingServingSize, setIngServingSize] = useState("");
+  const [ingServingAmount, setIngServingAmount] = useState("");
 
   // Recipe Form State
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
@@ -93,6 +96,8 @@ export default function ExploreScreen() {
     setIngProtein("");
     setIngFat("");
     setIngCarbs("");
+    setIngServingSize("");
+    setIngServingAmount("");
     setIngModalVisible(true);
   };
 
@@ -103,6 +108,8 @@ export default function ExploreScreen() {
     setIngProtein(String(ing.proteinPer100g));
     setIngFat(String(ing.fatPer100g));
     setIngCarbs(String(ing.carbsPer100g));
+    setIngServingSize(ing.servingSize || "");
+    setIngServingAmount(ing.servingAmount ? String(ing.servingAmount) : "");
     setIngModalVisible(true);
   };
 
@@ -134,6 +141,8 @@ export default function ExploreScreen() {
       proteinPer100g: protein,
       fatPer100g: fat,
       carbsPer100g: carbs,
+      ...(ingServingSize.trim() && { servingSize: ingServingSize.trim() }),
+      ...(ingServingAmount.trim() && { servingAmount: parseFloat(ingServingAmount) }),
     };
 
     try {
@@ -324,12 +333,35 @@ export default function ExploreScreen() {
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          マスタ管理
-        </Text>
-        <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
-          料理のテンプレートと食材データベース
-        </Text>
+        <View>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            マスタ管理
+          </Text>
+          <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
+            料理のテンプレートと食材データベース
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={() =>
+            Alert.alert(
+              'データリセット',
+              '全てのデータを初期状態に戻しますか？この操作は取り消せません。',
+              [
+                { text: 'キャンセル', style: 'cancel' },
+                {
+                  text: 'リセット',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await initStorage(true);
+                    Alert.alert('完了', 'データを初期状態にリセットしました。アプリを再起動してください。');
+                  },
+                },
+              ]
+            )
+          }>
+          <Ionicons name="refresh" size={20} color={colors.tint} />
+        </TouchableOpacity>
       </View>
 
       {/* Segmented Tab Controller */}
@@ -513,6 +545,11 @@ export default function ExploreScreen() {
                       P: {ing.proteinPer100g}g / F: {ing.fatPer100g}g / C:{" "}
                       {ing.carbsPer100g}g
                     </Text>
+                    {ing.servingSize && (
+                      <Text style={[styles.tableServingText, { color: colors.icon }]}>
+                        目安: {ing.servingSize} ({ing.servingAmount}g)
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.actionRow}>
                     <TouchableOpacity
@@ -656,6 +693,48 @@ export default function ExploreScreen() {
                   value={ingCarbs}
                   onChangeText={setIngCarbs}
                 />
+
+                <Text style={[styles.formLabel, { color: colors.text }]}>
+                  目安分量 (任意)
+                </Text>
+                <View style={styles.servingRow}>
+                  <View style={{ flex: 2 }}>
+                    <TextInput
+                      style={[
+                        styles.formInput,
+                        {
+                          color: colors.text,
+                          backgroundColor: "#f2f2f7",
+                          borderColor: "#e5e5ea",
+                        },
+                      ]}
+                      placeholder="例: 1個, 1本, 大さじ1"
+                      placeholderTextColor={colors.icon}
+                      value={ingServingSize}
+                      onChangeText={setIngServingSize}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[
+                        styles.formInput,
+                        {
+                          color: colors.text,
+                          backgroundColor: "#f2f2f7",
+                          borderColor: "#e5e5ea",
+                        },
+                      ]}
+                      keyboardType="numeric"
+                      placeholder="グラム数"
+                      placeholderTextColor={colors.icon}
+                      value={ingServingAmount}
+                      onChangeText={setIngServingAmount}
+                    />
+                  </View>
+                </View>
+                <Text style={[styles.helperText, { color: colors.icon }]}>
+                  例: 1個(中玉) → 50g
+                </Text>
 
                 <TouchableOpacity
                   style={[
@@ -881,15 +960,28 @@ export default function ExploreScreen() {
                               ]}
                               onPress={() => setBuilderSelectedIngId(ing.id)}
                             >
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  color: isSelected ? "#fff" : colors.text,
-                                  fontWeight: isSelected ? "bold" : "normal",
-                                }}
-                              >
-                                {ing.name} ({ing.caloriesPer100g} kcal/100g)
-                              </Text>
+                              <View>
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    color: isSelected ? "#fff" : colors.text,
+                                    fontWeight: isSelected ? "bold" : "normal",
+                                  }}
+                                >
+                                  {ing.name}
+                                </Text>
+                                {ing.servingSize && (
+                                  <Text
+                                    style={{
+                                      fontSize: 10,
+                                      color: isSelected ? "rgba(255,255,255,0.8)" : colors.icon,
+                                      marginTop: 2,
+                                    }}
+                                  >
+                                    目安: {ing.servingSize} ({ing.servingAmount}g)
+                                  </Text>
+                                )}
+                              </View>
                             </TouchableOpacity>
                           );
                         })}
@@ -1100,6 +1192,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 1,
   },
+  tableServingText: {
+    fontSize: 10,
+    marginTop: 1,
+    fontStyle: "italic",
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1273,6 +1370,17 @@ const styles = StyleSheet.create({
   builderQtyRow: {
     flexDirection: "row",
     gap: 10,
+  },
+  servingRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  helperText: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+  resetButton: {
+    padding: 8,
   },
   inlineActionRow: {
     flexDirection: "row",
