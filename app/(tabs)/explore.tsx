@@ -2,13 +2,10 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -27,6 +24,11 @@ import {
   saveIngredient,
   saveRecipe,
 } from "@/constants/storage";
+import { RecipeCard } from "@/components/explore/recipe-card";
+import { IngredientRow } from "@/components/explore/ingredient-row";
+import { IngredientModal } from "@/components/explore/ingredient-modal";
+import { RecipeBuilderModal } from "@/components/explore/recipe-builder-modal";
+import { TabController } from "@/components/explore/tab-controller";
 
 export default function ExploreScreen() {
   const colors = Colors["light"];
@@ -368,43 +370,12 @@ export default function ExploreScreen() {
       </TouchableOpacity>
 
       {/* Segmented Tab Controller */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "recipes" && { backgroundColor: colors.tint },
-            activeTab !== "recipes" && { backgroundColor: "#f0f0f0" },
-          ]}
-          onPress={() => setActiveTab("recipes")}
-        >
-          <Text
-            style={[
-              styles.tabButtonText,
-              { color: activeTab === "recipes" ? "#fff" : colors.text },
-            ]}
-          >
-            レシピマスタ ({recipes.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === "ingredients" && { backgroundColor: colors.tint },
-            activeTab !== "ingredients" && { backgroundColor: "#f0f0f0" },
-          ]}
-          onPress={() => setActiveTab("ingredients")}
-        >
-          <Text
-            style={[
-              styles.tabButtonText,
-              { color: activeTab === "ingredients" ? "#fff" : colors.text },
-            ]}
-          >
-            食材マスタ ({ingredients.length})
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TabController
+        activeTab={activeTab}
+        recipesCount={recipes.length}
+        ingredientsCount={ingredients.length}
+        onTabChange={setActiveTab}
+      />
 
       {/* Add Button - Fixed at top, not scrolling */}
       <View style={styles.addButtonContainer}>
@@ -429,639 +400,103 @@ export default function ExploreScreen() {
         {activeTab === "recipes" ? (
           // 🍛 Recipes List View
           <View>
-            {recipes.map((rec) => {
-              // Calculate default recipe calories
-              const defaultCalories = Math.round(
-                rec.ingredients.reduce((sum, ri) => {
-                  const ing = ingredients.find((i) => i.id === ri.ingredientId);
-                  return (
-                    sum + (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100
-                  );
-                }, 0),
-              );
-
-              return (
-                <View
-                  key={rec.id}
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: "#fff",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                >
-                  <View style={styles.cardHeader}>
-                    <View>
-                      <Text style={[styles.cardTitle, { color: colors.text }]}>
-                        {rec.name}
-                      </Text>
-                      <Text
-                        style={[styles.cardSubTitle, { color: colors.icon }]}
-                      >
-                        標準：{defaultCalories} kcal
-                      </Text>
-                    </View>
-                    <View style={styles.actionRow}>
-                      <TouchableOpacity
-                        style={styles.iconBtn}
-                        onPress={() => handleOpenEditRecipe(rec)}
-                      >
-                        <Ionicons
-                          name="create-outline"
-                          size={18}
-                          color={colors.tint}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.iconBtn}
-                        onPress={() => handleDeleteRecipe(rec.id)}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={18}
-                          color="#ff453a"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[styles.cardBody, { backgroundColor: "#F0FDF4" }]}
-                  >
-                    {rec.ingredients.map((ri) => {
-                      const ing = ingredients.find(
-                        (i) => i.id === ri.ingredientId,
-                      );
-                      const kcal = Math.round(
-                        (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
-                      );
-                      return (
-                        <View key={ri.ingredientId} style={styles.ingRowDetail}>
-                          <Text
-                            style={[styles.ingRowName, { color: colors.text }]}
-                          >
-                            ・{ing ? ing.name : "不明な食材"}
-                          </Text>
-                          <Text
-                            style={[styles.ingRowAmt, { color: colors.icon }]}
-                          >
-                            {ri.baseAmount}g ({kcal} kcal)
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })}
+            {recipes.map((rec) => (
+              <RecipeCard
+                key={rec.id}
+                recipe={rec}
+                ingredients={ingredients}
+                onEdit={handleOpenEditRecipe}
+                onDelete={handleDeleteRecipe}
+              />
+            ))}
           </View>
         ) : (
           // 🥩 Ingredients List View
-          <View>
-            <View
-              style={[
-                styles.tableCard,
-                { backgroundColor: "#fff", borderColor: "#e5e5ea" },
-              ]}
-            >
-              {ingredients.map((ing, idx) => (
-                <View
-                  key={ing.id}
-                  style={[
-                    styles.tableRow,
-                    { borderBottomColor: "#f2f2f7" },
-                    idx === ingredients.length - 1 && { borderBottomWidth: 0 },
-                  ]}
-                >
-                  <View style={styles.tableInfo}>
-                    <Text
-                      style={[styles.tableNameText, { color: colors.text }]}
-                    >
-                      {ing.name}
-                    </Text>
-                    <Text style={[styles.tableCalText, { color: colors.icon }]}>
-                      {ing.caloriesPer100g} kcal / 100g
-                    </Text>
-                    <Text style={[styles.tablePfcText, { color: colors.icon }]}>
-                      P: {ing.proteinPer100g}g / F: {ing.fatPer100g}g / C:{" "}
-                      {ing.carbsPer100g}g
-                    </Text>
-                    {ing.servingSize && (
-                      <Text style={[styles.tableServingText, { color: colors.icon }]}>
-                        目安: {ing.servingSize} ({ing.servingAmount}g)
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity
-                      style={styles.iconBtn}
-                      onPress={() => handleOpenEditIng(ing)}
-                    >
-                      <Ionicons
-                        name="create-outline"
-                        size={18}
-                        color={colors.tint}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.iconBtn}
-                      onPress={() => handleDeleteIngredient(ing.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={18}
-                        color="#ff453a"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-            </View>
+          <View
+            style={[
+              styles.tableCard,
+              { backgroundColor: "#fff", borderColor: "#e5e5ea" },
+            ]}
+          >
+            {ingredients.map((ing, idx) => (
+              <IngredientRow
+                key={ing.id}
+                ingredient={ing}
+                index={idx}
+                totalCount={ingredients.length}
+                onEdit={handleOpenEditIng}
+                onDelete={handleDeleteIngredient}
+              />
+            ))}
           </View>
         )}
       </ScrollView>
 
       {/* 🥩 Ingredient Add/Edit Modal */}
-      <Modal visible={ingModalVisible} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.modalKeyboardContainer}
-          >
-            <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>
-                  {editingIngredientId
-                    ? "食材マスタの編集"
-                    : "新しい食材の登録"}
-                </Text>
-                <TouchableOpacity onPress={() => setIngModalVisible(false)}>
-                  <Ionicons name="close" size={24} color={colors.icon} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalForm}>
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  食材名
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: "#f2f2f7",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                  placeholder="例: 白米、鶏むね肉、アボカド"
-                  placeholderTextColor={colors.icon}
-                  value={ingName}
-                  onChangeText={setIngName}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  カロリー (100gあたり/kcal)
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: "#f2f2f7",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 156"
-                  placeholderTextColor={colors.icon}
-                  value={ingCalories}
-                  onChangeText={setIngCalories}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  たんぱく質 (100gあたり/g)
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: "#f2f2f7",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 23"
-                  placeholderTextColor={colors.icon}
-                  value={ingProtein}
-                  onChangeText={setIngProtein}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  脂質 (100gあたり/g)
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: "#f2f2f7",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 1"
-                  placeholderTextColor={colors.icon}
-                  value={ingFat}
-                  onChangeText={setIngFat}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  炭水化物 (100gあたり/g)
-                </Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: "#f2f2f7",
-                      borderColor: "#e5e5ea",
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 36"
-                  placeholderTextColor={colors.icon}
-                  value={ingCarbs}
-                  onChangeText={setIngCarbs}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  目安分量 (任意)
-                </Text>
-                <View style={styles.servingRow}>
-                  <View style={{ flex: 2 }}>
-                    <TextInput
-                      style={[
-                        styles.formInput,
-                        {
-                          color: colors.text,
-                          backgroundColor: "#f2f2f7",
-                          borderColor: "#e5e5ea",
-                        },
-                      ]}
-                      placeholder="例: 1個, 1本, 大さじ1"
-                      placeholderTextColor={colors.icon}
-                      value={ingServingSize}
-                      onChangeText={setIngServingSize}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      style={[
-                        styles.formInput,
-                        {
-                          color: colors.text,
-                          backgroundColor: "#f2f2f7",
-                          borderColor: "#e5e5ea",
-                        },
-                      ]}
-                      keyboardType="numeric"
-                      placeholder="グラム数"
-                      placeholderTextColor={colors.icon}
-                      value={ingServingAmount}
-                      onChangeText={setIngServingAmount}
-                    />
-                  </View>
-                </View>
-                <Text style={[styles.helperText, { color: colors.icon }]}>
-                  例: 1個(中玉) → 50g
-                </Text>
-
-                <TouchableOpacity
-                  style={[
-                    styles.formSubmitBtn,
-                    { backgroundColor: colors.tint },
-                  ]}
-                  onPress={handleSaveIngredient}
-                >
-                  <Text style={styles.formSubmitBtnText}>保存する</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+      <IngredientModal
+        visible={ingModalVisible}
+        editingIngredient={editingIngredientId ? {
+          id: editingIngredientId,
+          name: ingName,
+          caloriesPer100g: parseInt(ingCalories) || 0,
+          proteinPer100g: parseFloat(ingProtein) || 0,
+          fatPer100g: parseFloat(ingFat) || 0,
+          carbsPer100g: parseFloat(ingCarbs) || 0,
+          ...(ingServingSize.trim() && { servingSize: ingServingSize.trim() }),
+          ...(ingServingAmount.trim() && { servingAmount: parseFloat(ingServingAmount) }),
+        } : null}
+        formData={{
+          name: ingName,
+          calories: ingCalories,
+          protein: ingProtein,
+          fat: ingFat,
+          carbs: ingCarbs,
+          servingSize: ingServingSize,
+          servingAmount: ingServingAmount,
+        }}
+        onClose={() => setIngModalVisible(false)}
+        onSave={handleSaveIngredient}
+        onFormChange={(field, value) => {
+          switch (field) {
+            case "name": setIngName(value); break;
+            case "calories": setIngCalories(value); break;
+            case "protein": setIngProtein(value); break;
+            case "fat": setIngFat(value); break;
+            case "carbs": setIngCarbs(value); break;
+            case "servingSize": setIngServingSize(value); break;
+            case "servingAmount": setIngServingAmount(value); break;
+          }
+        }}
+      />
 
       {/* 🍛 Recipe Add/Edit Modal (Recipe Builder) */}
-      <Modal visible={recModalVisible} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.modalContent,
-              styles.recipeBuilderContent,
-              { backgroundColor: "#fff" },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingRecipeId ? "レシピの編集" : "新しいレシピを作成"}
-              </Text>
-              <TouchableOpacity onPress={() => setRecModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.icon} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 30 }}
-            >
-              <Text
-                style={[
-                  styles.formLabel,
-                  { color: colors.text, marginBottom: 8 },
-                ]}
-              >
-                レシピ名
-              </Text>
-              <TextInput
-                style={[
-                  styles.formInput,
-                  {
-                    color: colors.text,
-                    backgroundColor: "#f2f2f7",
-                    borderColor: "#e5e5ea",
-                    marginBottom: 16,
-                  },
-                ]}
-                placeholder="例: 高タンパクチキンカレー"
-                placeholderTextColor={colors.icon}
-                value={recName}
-                onChangeText={setRecName}
-              />
-
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  配合する材料
-                </Text>
-                <TouchableOpacity
-                  style={[styles.smallAddBtn, { backgroundColor: colors.tint }]}
-                  onPress={() => setIsSelectingIng(true)}
-                >
-                  <Ionicons name="add" size={14} color="#fff" />
-                  <Text style={styles.smallAddBtnText}>材料追加</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* List of currently selected ingredients in the recipe builder */}
-              <View
-                style={[styles.builderIngsList, { backgroundColor: "#F0FDF4" }]}
-              >
-                {recSelectedIngs.length === 0 ? (
-                  <Text
-                    style={[
-                      styles.emptySectionText,
-                      {
-                        color: colors.icon,
-                        textAlign: "center",
-                        paddingVertical: 15,
-                      },
-                    ]}
-                  >
-                    材料が追加されていません
-                  </Text>
-                ) : (
-                  recSelectedIngs.map((ri) => {
-                    const ing = ingredients.find(
-                      (i) => i.id === ri.ingredientId,
-                    );
-                    const kcal = Math.round(
-                      (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
-                    );
-                    const isEditing = editingIngWeightId === ri.ingredientId;
-                    return (
-                      <View key={ri.ingredientId} style={styles.builderIngRow}>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={[
-                              styles.builderIngName,
-                              { color: colors.text },
-                            ]}
-                          >
-                            {ing ? ing.name : "不明"}
-                          </Text>
-                          {isEditing ? (
-                            <View style={styles.inlineWeightEditRow}>
-                              <TouchableOpacity
-                                style={styles.inlineStepperBtn}
-                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount - 10)}>
-                                <Text style={styles.inlineStepperText}>-10g</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.inlineStepperBtn}
-                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount - 1)}>
-                                <Text style={styles.inlineStepperText}>-1g</Text>
-                              </TouchableOpacity>
-                              <TextInput
-                                keyboardType="numeric"
-                                style={[styles.inlineWeightInput, { color: colors.text }]}
-                                value={tempIngWeight}
-                                onChangeText={setTempIngWeight}
-                                onBlur={handleSaveWeightEdit}
-                              />
-                              <Text style={[styles.inlineWeightUnit, { color: colors.icon }]}>g</Text>
-                              <TouchableOpacity
-                                style={styles.inlineStepperBtn}
-                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount + 1)}>
-                                <Text style={styles.inlineStepperText}>+1g</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={styles.inlineStepperBtn}
-                                onPress={() => handleUpdateIngWeight(ri.ingredientId, ri.baseAmount + 10)}>
-                                <Text style={styles.inlineStepperText}>+10g</Text>
-                              </TouchableOpacity>
-                            </View>
-                          ) : (
-                            <Text
-                              style={[
-                                styles.builderIngCalText,
-                                { color: colors.icon },
-                              ]}
-                            >
-                              {ri.baseAmount}g ({kcal} kcal)
-                            </Text>
-                          )}
-                        </View>
-                        <View style={styles.builderIngActions}>
-                          {isEditing ? (
-                            <TouchableOpacity
-                              style={styles.saveWeightBtn}
-                              onPress={handleSaveWeightEdit}>
-                              <Ionicons name="checkmark" size={16} color="#fff" />
-                            </TouchableOpacity>
-                          ) : (
-                            <>
-                              <TouchableOpacity
-                                style={styles.editWeightBtn}
-                                onPress={() => handleStartEditWeight(ri.ingredientId, ri.baseAmount)}>
-                                <Ionicons name="create-outline" size={16} color={colors.tint} />
-                              </TouchableOpacity>
-                              <TouchableOpacity onPress={() => handleRemoveIngFromRecipe(ri.ingredientId)}>
-                                <Ionicons name="close-circle-outline" size={20} color="#ff453a" />
-                              </TouchableOpacity>
-                            </>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })
-                )}
-              </View>
-
-              {/* Builder Add Ingredient Sub-Form (inline toggle) */}
-              {isSelectingIng && (
-                <View
-                  style={[
-                    styles.inlineSelectorCard,
-                    { backgroundColor: "#f0f0f5", borderColor: colors.tint },
-                  ]}
-                >
-                  <Text
-                    style={[styles.inlineSelectorTitle, { color: colors.text }]}
-                  >
-                    材料とベース量を選択
-                  </Text>
-
-                  {ingredients.length === 0 ? (
-                    <Text
-                      style={{
-                        color: colors.icon,
-                        fontSize: 13,
-                        marginBottom: 10,
-                      }}
-                    >
-                      まず食材マスタに食材を追加してください。
-                    </Text>
-                  ) : (
-                    <View style={styles.dropdownContainer}>
-                      <Text style={[styles.tinyLabel, { color: colors.icon }]}>
-                        食材名
-                      </Text>
-                      <ScrollView
-                        style={styles.miniScrollView}
-                        nestedScrollEnabled={true}
-                      >
-                        {ingredients.map((ing) => {
-                          const isSelected = builderSelectedIngId === ing.id;
-                          return (
-                            <TouchableOpacity
-                              key={ing.id}
-                              style={[
-                                styles.miniIngSelectRow,
-                                isSelected && { backgroundColor: colors.tint },
-                              ]}
-                              onPress={() => setBuilderSelectedIngId(ing.id)}
-                            >
-                              <View>
-                                <Text
-                                  style={{
-                                    fontSize: 12,
-                                    color: isSelected ? "#fff" : colors.text,
-                                    fontWeight: isSelected ? "bold" : "normal",
-                                  }}
-                                >
-                                  {ing.name}
-                                </Text>
-                                {ing.servingSize && (
-                                  <Text
-                                    style={{
-                                      fontSize: 10,
-                                      color: isSelected ? "rgba(255,255,255,0.8)" : colors.icon,
-                                      marginTop: 2,
-                                    }}
-                                  >
-                                    目安: {ing.servingSize} ({ing.servingAmount}g)
-                                  </Text>
-                                )}
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    </View>
-                  )}
-
-                  <View style={styles.builderQtyRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.tinyLabel, { color: colors.icon }]}>
-                        基本グラム数 (g)
-                      </Text>
-                      <TextInput
-                        keyboardType="numeric"
-                        style={[
-                          styles.formInput,
-                          {
-                            color: colors.text,
-                            backgroundColor: "#fff",
-                            borderColor: "#d1d1d6",
-                            paddingVertical: 6,
-                            fontSize: 14,
-                          },
-                        ]}
-                        value={builderAmount}
-                        onChangeText={setBuilderAmount}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inlineActionRow}>
-                    <TouchableOpacity
-                      style={[
-                        styles.inlineActionBtn,
-                        { backgroundColor: "#e5e5ea" },
-                      ]}
-                      onPress={() => setIsSelectingIng(false)}
-                    >
-                      <Text
-                        style={[
-                          styles.inlineActionBtnText,
-                          { color: colors.text },
-                        ]}
-                      >
-                        キャンセル
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.inlineActionBtn,
-                        { backgroundColor: colors.tint },
-                      ]}
-                      onPress={handleAddIngToRecipe}
-                    >
-                      <Text
-                        style={[styles.inlineActionBtnText, { color: "#fff" }]}
-                      >
-                        レシピに加える
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
-              {/* Submit Recipe */}
-              <TouchableOpacity
-                style={[
-                  styles.formSubmitBtn,
-                  { backgroundColor: colors.tint, marginTop: 24 },
-                ]}
-                onPress={handleSaveRecipe}
-              >
-                <Text style={styles.formSubmitBtnText}>レシピを保存する</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <RecipeBuilderModal
+        visible={recModalVisible}
+        editingRecipe={editingRecipeId ? {
+          id: editingRecipeId,
+          name: recName,
+          ingredients: recSelectedIngs,
+        } : null}
+        recipeName={recName}
+        selectedIngredients={recSelectedIngs}
+        builderSelectedIngId={builderSelectedIngId}
+        builderAmount={builderAmount}
+        isSelectingIng={isSelectingIng}
+        editingIngWeightId={editingIngWeightId}
+        tempIngWeight={tempIngWeight}
+        ingredients={ingredients}
+        onClose={() => setRecModalVisible(false)}
+        onSave={handleSaveRecipe}
+        onRecipeNameChange={setRecName}
+        onAddIngToRecipe={handleAddIngToRecipe}
+        onRemoveIngFromRecipe={handleRemoveIngFromRecipe}
+        onUpdateIngWeight={handleUpdateIngWeight}
+        onStartEditWeight={handleStartEditWeight}
+        onSaveWeightEdit={handleSaveWeightEdit}
+        onSelectIngredient={setBuilderSelectedIngId}
+        onBuilderAmountChange={setBuilderAmount}
+        onCancelIngSelection={() => setIsSelectingIng(false)}
+      />
     </View>
   );
 }
@@ -1089,22 +524,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 2,
   },
-  tabContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    gap: 10,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  tabButtonText: {
-    fontSize: 13,
-    fontWeight: "bold",
-  },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
@@ -1126,263 +545,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 15,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cardSubTitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  iconBtn: {
-    padding: 6,
-  },
-  cardBody: {
-    borderRadius: 12,
-    padding: 12,
-  },
-  ingRowDetail: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-  ingRowName: {
-    fontSize: 13,
-  },
-  ingRowAmt: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   tableCard: {
     borderRadius: 20,
     borderWidth: 1,
     overflow: "hidden",
-  },
-  tableRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tableInfo: {
-    flex: 1,
-  },
-  tableNameText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  tableCalText: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  tablePfcText: {
-    fontSize: 10,
-    marginTop: 1,
-  },
-  tableServingText: {
-    fontSize: 10,
-    marginTop: 1,
-    fontStyle: "italic",
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalKeyboardContainer: {
-    width: "100%",
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    width: "100%",
-  },
-  recipeBuilderContent: {
-    height: "85%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  modalForm: {
-    gap: 12,
-  },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  formInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    fontSize: 15,
-  },
-  formSubmitBtn: {
-    borderRadius: 12,
-    padding: 15,
-    alignItems: "center",
-  },
-  formSubmitBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-    marginTop: 8,
-  },
-  smallAddBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
-  },
-  smallAddBtnText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  builderIngsList: {
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    gap: 8,
-  },
-  emptySectionText: {
-    fontSize: 13,
-    fontStyle: "italic",
-  },
-  builderIngRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(120, 120, 128, 0.1)",
-    paddingBottom: 8,
-  },
-  builderIngName: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  builderIngCalText: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  builderIngActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  editWeightBtn: {
-    padding: 4,
-  },
-  saveWeightBtn: {
-    padding: 4,
-    backgroundColor: Colors["light"].tint,
-    borderRadius: 4,
-  },
-  inlineWeightEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  inlineStepperBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: "#e5e7eb",
-  },
-  inlineStepperText: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  inlineWeightInput: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    fontSize: 12,
-    fontWeight: "bold",
-    width: 50,
-    textAlign: "center",
-  },
-  inlineWeightUnit: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  inlineSelectorCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-    gap: 10,
-  },
-  inlineSelectorTitle: {
-    fontSize: 13,
-    fontWeight: "bold",
-  },
-  dropdownContainer: {
-    gap: 4,
-  },
-  tinyLabel: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  miniScrollView: {
-    maxHeight: 120,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(120,120,128,0.2)",
-  },
-  miniIngSelectRow: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(120,120,128,0.1)",
-  },
-  builderQtyRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  servingRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  helperText: {
-    fontSize: 11,
-    marginTop: 4,
   },
   floatingResetButton: {
     position: 'absolute',
@@ -1404,20 +570,5 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
     }),
-  },
-  inlineActionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 4,
-  },
-  inlineActionBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  inlineActionBtnText: {
-    fontSize: 12,
-    fontWeight: "bold",
   },
 });
