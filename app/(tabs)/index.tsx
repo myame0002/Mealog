@@ -3,15 +3,12 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
   AppState,
+  Alert,
+  ScrollView,
+  Modal,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -30,6 +27,11 @@ import {
   calculateItemCalories,
   calculateItemPFC,
 } from '@/constants/storage';
+import DateCarousel from '@/components/date-carousel';
+import CaloriesProgress from '@/components/calories-progress';
+import MealSection from '@/components/meal-section';
+import ManualAddModal from '@/components/manual-add-modal';
+import RecipeAddModal from '@/components/recipe-add-modal';
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: '朝食', icon: 'sunny', color: '#FF9500' },
@@ -67,6 +69,11 @@ export default function HomeScreen() {
 
   // Search state for Recipe Modal
   const [recipeSearchQuery, setRecipeSearchQuery] = useState('');
+
+  // Add ingredient to recipe states
+  const [showAddIngToRecipe, setShowAddIngToRecipe] = useState<string | null>(null);
+  const [selectedIngForRecipe, setSelectedIngForRecipe] = useState('');
+  const [recipeIngAmount, setRecipeIngAmount] = useState('');
 
   // Daily target calorie goal
   const dailyTarget = 2000;
@@ -148,50 +155,6 @@ export default function HomeScreen() {
     }
     return days;
   }, [selectedDate]);
-
-  // Calories Calculations
-  const mealCalories = useMemo(() => {
-    const breakdown = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
-    logs.forEach((item) => {
-      breakdown[item.mealType] += item.calories;
-    });
-    return breakdown;
-  }, [logs]);
-
-  const totalCalories = useMemo(() => {
-    return Object.values(mealCalories).reduce((sum, val) => sum + val, 0);
-  }, [mealCalories]);
-
-  // PFC Calculations
-  const mealPFC = useMemo(() => {
-    const breakdown = {
-      breakfast: { protein: 0, fat: 0, carbs: 0 },
-      lunch: { protein: 0, fat: 0, carbs: 0 },
-      dinner: { protein: 0, fat: 0, carbs: 0 },
-      snack: { protein: 0, fat: 0, carbs: 0 },
-    };
-    logs.forEach((item) => {
-      breakdown[item.mealType].protein += item.protein;
-      breakdown[item.mealType].fat += item.fat;
-      breakdown[item.mealType].carbs += item.carbs;
-    });
-    return breakdown;
-  }, [logs]);
-
-  const totalPFC = useMemo(() => {
-    return logs.reduce(
-      (acc, item) => ({
-        protein: acc.protein + item.protein,
-        fat: acc.fat + item.fat,
-        carbs: acc.carbs + item.carbs,
-      }),
-      { protein: 0, fat: 0, carbs: 0 }
-    );
-  }, [logs]);
-
-  const progressPercentage = useMemo(() => {
-    return Math.min((totalCalories / dailyTarget) * 100, 100);
-  }, [totalCalories]);
 
   // Log Operations
   const handleDateChange = async (dateStr: string) => {
@@ -312,100 +275,6 @@ export default function HomeScreen() {
     setRecipeModalVisible(true);
   };
 
-  // Product Selector Component
-  const ProductSelector = ({
-    products,
-    onSelect,
-    colors,
-    theme,
-  }: {
-    products: Product[];
-    onSelect: (product: Product) => void;
-    colors: any;
-    theme: string;
-  }) => {
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const filteredProducts = products.filter((p) => {
-      const q = searchQuery.toLowerCase();
-      return (
-        p.name.toLowerCase().includes(q) ||
-        (p.brand ?? '').toLowerCase().includes(q)
-      );
-    });
-
-    return (
-      <View style={styles.productModalContent}>
-        {/* Search Bar */}
-        <View style={styles.modalSearchContainer}>
-          <View style={[styles.searchBar, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
-            <Ionicons name="search-outline" size={16} color={colors.icon} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="商品名・ブランドで検索..."
-              placeholderTextColor={colors.icon}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={16} color={colors.icon} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        <ScrollView
-          contentContainerStyle={styles.productListContainer}
-          showsVerticalScrollIndicator={false}>
-          {filteredProducts.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="storefront-outline" size={48} color="#D1D5DB" />
-              <Text style={[styles.emptyTitle, { color: colors.icon }]}>
-                {searchQuery ? '一致する商品が見つかりません' : '市販品が登録されていません'}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: '#9CA3AF' }]}>
-                {searchQuery ? '検索ワードを変えてみてください' : '市販品管理タブから追加しましょう'}
-              </Text>
-            </View>
-          ) : (
-            filteredProducts.map((product) => (
-              <TouchableOpacity
-                key={product.id}
-                style={[styles.productCard, { backgroundColor: '#fff', borderColor: '#E5E7EB' }]}
-                onPress={() => onSelect(product)}>
-                <View style={styles.productInfo}>
-                  {product.brand ? (
-                    <View style={styles.brandBadge}>
-                      <Text style={styles.brandBadgeText}>{product.brand}</Text>
-                    </View>
-                  ) : null}
-                  <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-                    {product.name}
-                  </Text>
-                  <Text style={[styles.productServing, { color: colors.icon }]}>
-                    {product.servingSize} あたり
-                  </Text>
-                </View>
-
-                <View style={styles.productRight}>
-                  <Text style={[styles.productCalories, { color: colors.tint }]}>
-                    {product.caloriesPerServing}
-                  </Text>
-                  <Text style={[styles.productCalUnit, { color: colors.icon }]}>kcal</Text>
-                  <View style={[styles.productAddBtn, { backgroundColor: colors.tint }]}>
-                    <Text style={styles.productAddBtnText}>＋ 追加</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-          <View style={{ height: 30 }} />
-        </ScrollView>
-      </View>
-    );
-  };
-
   const handleDeleteLogItem = async (itemId: string) => {
     const updatedLogs = logs.filter((item) => item.id !== itemId);
     setLogs(updatedLogs);
@@ -509,11 +378,6 @@ export default function HomeScreen() {
     ]);
   };
 
-  // Add ingredient to recipe log (day-specific)
-  const [showAddIngToRecipe, setShowAddIngToRecipe] = useState<string | null>(null);
-  const [selectedIngForRecipe, setSelectedIngForRecipe] = useState('');
-  const [recipeIngAmount, setRecipeIngAmount] = useState('');
-
   const handleAddIngredientToLog = async (logItemId: string) => {
     if (!selectedIngForRecipe || !recipeIngAmount.trim()) {
       Alert.alert('入力エラー', '材料と量を入力してください。');
@@ -585,7 +449,9 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={colors.tint} />
+        <View style={styles.activityIndicator}>
+          <Text style={styles.loadingText}>読み込み中...</Text>
+        </View>
       </View>
     );
   }
@@ -600,631 +466,92 @@ export default function HomeScreen() {
       </View>
 
       {/* 📅 Horizontal Date Carousel */}
-      <View style={styles.calendarContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarScroll}>
-          {calendarDays.map((day) => {
-            const isSelected = day.dateStr === selectedDate;
-            return (
-              <TouchableOpacity
-                key={day.dateStr}
-                style={[
-                  styles.calendarDayCard,
-                  isSelected && { backgroundColor: colors.tint },
-                  !isSelected && { backgroundColor: '#F3F4F6' },
-                ]}
-                onPress={() => handleDateChange(day.dateStr)}>
-                <Text
-                  style={[
-                    styles.calendarDayName,
-                    { color: isSelected ? '#fff' : colors.icon },
-                  ]}>
-                  {day.dayName}
-                </Text>
-                <Text
-                  style={[
-                    styles.calendarDayNum,
-                    { color: isSelected ? '#fff' : colors.text },
-                    day.isToday && !isSelected && { color: colors.tint, fontWeight: 'bold' },
-                  ]}>
-                  {day.dayNum}
-                </Text>
-                {day.isToday && <View style={[styles.todayIndicator, { backgroundColor: isSelected ? '#fff' : colors.tint }]} />}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <DateCarousel
+        selectedDate={selectedDate}
+        calendarDays={calendarDays}
+        onDateChange={handleDateChange}
+        colors={colors}
+        theme={theme as 'light' | 'dark'}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* 📊 Calories Progress Gauge */}
-        <View style={[styles.progressCard, { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' }]}>
-          <View style={styles.progressRow}>
-            <View>
-              <Text style={[styles.progressLabel, { color: colors.icon }]}>摂取カロリー</Text>
-              <Text style={[styles.progressValue, { color: colors.text }]}>
-                {totalCalories} <Text style={styles.progressUnit}>kcal</Text>
-              </Text>
-            </View>
-            <View style={styles.alignRight}>
-              <Text style={[styles.progressLabel, { color: colors.icon }]}>目標：{dailyTarget} kcal</Text>
-              {totalCalories > dailyTarget ? (
-                <Text style={[styles.overTargetText, { color: '#ff453a' }]}>
-                  超過: {totalCalories - dailyTarget} kcal
-                </Text>
-              ) : (
-                <Text style={[styles.underTargetText, { color: colors.tint }]}>
-                  残り: {dailyTarget - totalCalories} kcal
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {/* Progress Bar */}
-          <View style={styles.progressBarBg}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${progressPercentage}%`,
-                  backgroundColor: totalCalories > dailyTarget ? '#ff453a' : colors.tint,
-                },
-              ]}
-            />
-          </View>
-
-          {/* Quick breakdown list */}
-          <View style={styles.breakdownRow}>
-            {MEAL_TYPES.map((m) => (
-              <View key={m.key} style={styles.breakdownCol}>
-                <Ionicons name={m.icon} size={14} color={m.color} />
-                <Text style={[styles.breakdownValue, { color: colors.text }]}>
-                  {mealCalories[m.key]} <Text style={styles.breakdownUnit}>kcal</Text>
-                </Text>
-                <Text style={[styles.breakdownLabel, { color: colors.icon }]}>{m.label}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* PFC Breakdown */}
-          <View style={styles.pfcBreakdownRow}>
-            <View style={styles.pfcItem}>
-              <Text style={[styles.pfcLabel, { color: colors.icon }]}>たんぱく質</Text>
-              <Text style={[styles.pfcValue, { color: colors.text }]}>
-                {Math.round(totalPFC.protein)}<Text style={styles.pfcUnit}>g</Text>
-              </Text>
-            </View>
-            <View style={styles.pfcItem}>
-              <Text style={[styles.pfcLabel, { color: colors.icon }]}>脂質</Text>
-              <Text style={[styles.pfcValue, { color: colors.text }]}>
-                {Math.round(totalPFC.fat)}<Text style={styles.pfcUnit}>g</Text>
-              </Text>
-            </View>
-            <View style={styles.pfcItem}>
-              <Text style={[styles.pfcLabel, { color: colors.icon }]}>炭水化物</Text>
-              <Text style={[styles.pfcValue, { color: colors.text }]}>
-                {Math.round(totalPFC.carbs)}<Text style={styles.pfcUnit}>g</Text>
-              </Text>
-            </View>
-          </View>
-        </View>
+        <CaloriesProgress logs={logs} dailyTarget={dailyTarget} colors={colors} />
 
         {/* 🍳 Meal Sections */}
         {MEAL_TYPES.map((meal) => {
           const mealItems = logs.filter((item) => item.mealType === meal.key);
-          const mealSum = mealCalories[meal.key];
-
-          const mealCardStyle = {
-            backgroundColor: '#ffffff',
-            borderColor: '#e5e5ea',
-          } as const;
+          const mealCal = mealCalories(logs);
+          const mealSum = mealCal[meal.key as keyof typeof mealCal];
 
           return (
-            <View
+            <MealSection
               key={meal.key}
-              style={[
-                styles.mealSectionCard,
-                mealCardStyle,
-              ]}>
-              {/* Section Header */}
-              <View style={styles.mealHeader}>
-                <View style={styles.mealTitleRow}>
-                  <Ionicons name={meal.icon} size={20} color={meal.color} style={styles.mealIcon} />
-                  <Text style={[styles.mealTitleText, { color: colors.text }]}>{meal.label}</Text>
-                </View>
-                <Text style={[styles.mealSumText, { color: colors.text }]}>{mealSum} kcal</Text>
-              </View>
-
-              {/* Items List */}
-              <View style={styles.mealItemsList}>
-                {mealItems.length === 0 ? (
-                  <Text style={[styles.emptySectionText, { color: colors.icon }]}>
-                    食事が登録されていません
-                  </Text>
-                ) : (
-                  mealItems.map((item) => {
-                    const isExpanded = expandedLogId === item.id;
-                    return (
-                      <View
-                        key={item.id}
-                        style={[
-                          styles.logItemContainer,
-                          { borderBottomColor: '#f2f2f7' },
-                        ]}>
-                        {/* Food Row Tappable Header */}
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          style={styles.logItemHeader}
-                          onPress={() => {
-                            if (item.type === 'recipe') {
-                              setExpandedLogId(isExpanded ? null : item.id);
-                            }
-                          }}>
-                          <View style={styles.logItemNameCol}>
-                            {item.type === 'recipe' && (
-                              <Ionicons
-                                name={isExpanded ? 'chevron-down' : 'chevron-forward'}
-                                size={14}
-                                color={colors.icon}
-                                style={styles.chevronIcon}
-                              />
-                            )}
-                            <Text
-                              style={[
-                                styles.logItemName,
-                                { color: colors.text },
-                                item.type === 'recipe' && { fontWeight: '600' },
-                              ]}
-                              numberOfLines={1}
-                              ellipsizeMode="tail">
-                              {item.name}
-                            </Text>
-                            {item.type === 'recipe' && (
-                              <View style={[styles.presetBadge, { backgroundColor: '#D1FAE5' }]}>
-                                <Text style={[styles.presetBadgeText, { color: '#065F46' }]}>レシピ</Text>
-                              </View>
-                            )}
-                          </View>
-                          <View style={styles.logItemActionCol}>
-                            <View>
-                              <Text style={[styles.logItemCal, { color: colors.text }]}>
-                                {item.calories} kcal
-                              </Text>
-                              {(item.protein > 0 || item.fat > 0 || item.carbs > 0) && (
-                                <Text style={[styles.logItemPFC, { color: colors.icon }]}>
-                                  P:{Math.round(item.protein)}g F:{Math.round(item.fat)}g C:{Math.round(item.carbs)}g
-                                </Text>
-                              )}
-                            </View>
-                            <TouchableOpacity
-                              style={styles.deleteButton}
-                              onPress={() => handleDeleteLogItem(item.id)}>
-                              <Ionicons name="trash-outline" size={16} color="#ff453a" />
-                            </TouchableOpacity>
-                          </View>
-                        </TouchableOpacity>
-
-                        {/* ⚖️ Fine-Tuning Accordion for Recipes */}
-                        {item.type === 'recipe' && isExpanded && item.ingredients && (
-                          <View style={[styles.ingredientsContainer, { backgroundColor: '#F0FDF4' }]}>
-                            <View style={styles.ingredientsHeaderRow}>
-                              <Text style={[styles.ingredientsTitle, { color: colors.icon }]}>
-                                📊 材料の編集（その日限定）
-                              </Text>
-                              <TouchableOpacity
-                                style={[styles.addIngBtn, { backgroundColor: colors.tint }]}
-                                onPress={() => {
-                                  setShowAddIngToRecipe(item.id);
-                                  setSelectedIngForRecipe('');
-                                  setRecipeIngAmount('');
-                                }}>
-                                <Ionicons name="add" size={14} color="#fff" />
-                                <Text style={styles.addIngBtnText}>材料追加</Text>
-                              </TouchableOpacity>
-                            </View>
-
-                            {/* Add Ingredient Form (inline) */}
-                            {showAddIngToRecipe === item.id && (
-                              <View style={[styles.addIngForm, { backgroundColor: '#fff', borderColor: colors.tint }]}>
-                                <Text style={[styles.addIngFormTitle, { color: colors.text }]}>
-                                  新しい材料を追加
-                                </Text>
-                                <ScrollView style={styles.ingSelectorList} nestedScrollEnabled>
-                                  {ingredients.map((ing) => (
-                                    <TouchableOpacity
-                                      key={ing.id}
-                                      style={[
-                                        styles.ingSelectorItem,
-                                        selectedIngForRecipe === ing.id && { backgroundColor: colors.tint },
-                                      ]}
-                                      onPress={() => setSelectedIngForRecipe(ing.id)}>
-                                      <Text
-                                        style={{
-                                          color: selectedIngForRecipe === ing.id ? '#fff' : colors.text,
-                                          fontWeight: selectedIngForRecipe === ing.id ? 'bold' : 'normal',
-                                        }}>
-                                        {ing.name} ({ing.caloriesPer100g} kcal/100g)
-                                      </Text>
-                                    </TouchableOpacity>
-                                  ))}
-                                </ScrollView>
-                                <View style={styles.addIngAmountRow}>
-                                  <View style={{ flex: 1 }}>
-                                    <Text style={[styles.tinyLabel, { color: colors.icon }]}>
-                                      量 (g)
-                                    </Text>
-                                    <TextInput
-                                      keyboardType="numeric"
-                                      style={[styles.formInput, { color: colors.text }]}
-                                      placeholder="例: 100"
-                                      placeholderTextColor={colors.icon}
-                                      value={recipeIngAmount}
-                                      onChangeText={setRecipeIngAmount}
-                                    />
-                                  </View>
-                                  <View style={styles.addIngActionRow}>
-                                    <TouchableOpacity
-                                      style={[styles.addIngCancelBtn, { backgroundColor: '#e5e7eb' }]}
-                                      onPress={() => setShowAddIngToRecipe(null)}>
-                                      <Text style={[styles.addIngBtnText, { color: colors.text }]}>キャンセル</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                      style={[styles.addIngConfirmBtn, { backgroundColor: colors.tint }]}
-                                      onPress={() => handleAddIngredientToLog(item.id)}>
-                                      <Text style={[styles.addIngBtnText, { color: '#fff' }]}>追加</Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                </View>
-                              </View>
-                            )}
-
-                            {item.ingredients.map((ing, index) => {
-                              const calcKcal = Math.round((ing.amount * ing.caloriesPer100g) / 100);
-                              return (
-                                <View key={`${ing.ingredientId}-${index}`} style={styles.ingredientRow}>
-                                  {/* Top Row: Name and Calories */}
-                                  <View style={styles.ingTopRow}>
-                                    <View style={{ flex: 1 }}>
-                                      <Text style={[styles.ingName, { color: colors.text }]}>{ing.name}</Text>
-                                      <Text style={[styles.ingKcalDetail, { color: colors.icon }]}>
-                                        {ing.caloriesPer100g} kcal/100g
-                                      </Text>
-                                      <Text style={[styles.ingPfcDetail, { color: colors.icon }]}>
-                                        P:{ing.proteinPer100g}g F:{ing.fatPer100g}g C:{ing.carbsPer100g}g
-                                      </Text>
-                                    </View>
-                                    <View style={styles.ingSubTotalCol}>
-                                      <Text style={[styles.ingSubTotalCal, { color: colors.text }]}>
-                                        {calcKcal} kcal
-                                      </Text>
-                                      <Text style={[styles.ingSubTotalPFC, { color: colors.icon }]}>
-                                        P:{Math.round((ing.amount * ing.proteinPer100g) / 100)}g
-                                      </Text>
-                                      <TouchableOpacity
-                                        style={styles.ingDeleteBtn}
-                                        onPress={() => handleDeleteIngredientFromLog(item.id, ing.ingredientId)}>
-                                        <Ionicons name="close-circle" size={18} color="#EF4444" />
-                                      </TouchableOpacity>
-                                    </View>
-                                  </View>
-
-                                  {/* Bottom Row: Steppers & Input */}
-                                  <View style={styles.ingBottomRow}>
-                                    <TouchableOpacity
-                                      style={styles.stepperBtn}
-                                      onPress={() =>
-                                        handleUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount - 10)
-                                      }>
-                                      <Text style={[styles.stepperBtnText, { color: colors.text }]}>-10g</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                      style={styles.stepperBtn}
-                                      onPress={() =>
-                                        handleUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount - 1)
-                                      }>
-                                      <Text style={[styles.stepperBtnText, { color: colors.text }]}>-1g</Text>
-                                    </TouchableOpacity>
-
-                                    <View style={styles.weightInputBg}>
-                                      <TextInput
-                                        keyboardType="numeric"
-                                        style={[styles.weightInput, { color: colors.text }]}
-                                        value={String(ing.amount)}
-                                        onChangeText={(txt) => {
-                                          const parsed = parseInt(txt, 10);
-                                          handleUpdateIngredientWeight(
-                                            item.id,
-                                            ing.ingredientId,
-                                            isNaN(parsed) ? 0 : parsed
-                                          );
-                                        }}
-                                      />
-                                      <Text style={[styles.weightUnitText, { color: colors.icon }]}>g</Text>
-                                    </View>
-
-                                    <TouchableOpacity
-                                      style={styles.stepperBtn}
-                                      onPress={() =>
-                                        handleUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount + 1)
-                                      }>
-                                      <Text style={[styles.stepperBtnText, { color: colors.text }]}>+1g</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                      style={styles.stepperBtn}
-                                      onPress={() =>
-                                        handleUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount + 10)
-                                      }>
-                                      <Text style={[styles.stepperBtnText, { color: colors.text }]}>+10g</Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                </View>
-                              );
-                            })}
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })
-                )}
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.mealActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.mealActionBtn,
-                    { backgroundColor: '#f2f2f7' },
-                  ]}
-                  onPress={() => {
-                    setActiveMealType(meal.key);
-                    setManualModalVisible(true);
-                  }}>
-                  <Ionicons name="create-outline" size={14} color={colors.tint} />
-                  <Text style={[styles.mealActionText, { color: colors.text }]}>手動追加</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.mealActionBtn,
-                    { backgroundColor: '#f2f2f7' },
-                  ]}
-                  onPress={() => {
-                    setActiveMealType(meal.key);
-                    handleOpenRecipeModal();
-                  }}>
-                  <Ionicons name="list-outline" size={14} color={colors.tint} />
-                  <Text style={[styles.mealActionText, { color: colors.text }]}>レシピ追加</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.mealActionBtn,
-                    { backgroundColor: '#f2f2f7' },
-                  ]}
-                  onPress={() => {
-                    setActiveMealType(meal.key);
-                    handleOpenProductModal();
-                  }}>
-                  <Ionicons name="storefront-outline" size={14} color={colors.tint} />
-                  <Text style={[styles.mealActionText, { color: colors.text }]}>市販品</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+              meal={meal}
+              mealItems={mealItems}
+              mealSum={mealSum}
+              expandedLogId={expandedLogId}
+              showAddIngToRecipe={showAddIngToRecipe}
+              selectedIngForRecipe={selectedIngForRecipe}
+              recipeIngAmount={recipeIngAmount}
+              ingredients={ingredients}
+              colors={colors}
+              onToggleExpand={setExpandedLogId}
+              onDeleteLogItem={handleDeleteLogItem}
+              onUpdateIngredientWeight={handleUpdateIngredientWeight}
+              onDeleteIngredientFromLog={handleDeleteIngredientFromLog}
+              onAddIngredientToLog={handleAddIngredientToLog}
+              onShowAddIngToRecipe={setShowAddIngToRecipe}
+              onSelectIngForRecipe={setSelectedIngForRecipe}
+              onRecipeIngAmountChange={setRecipeIngAmount}
+              onOpenManualModal={() => {
+                setActiveMealType(meal.key);
+                setManualModalVisible(true);
+              }}
+              onOpenRecipeModal={() => {
+                setActiveMealType(meal.key);
+                handleOpenRecipeModal();
+              }}
+              onOpenProductModal={() => {
+                setActiveMealType(meal.key);
+                handleOpenProductModal();
+              }}
+            />
           );
         })}
       </ScrollView>
 
       {/* 📝 Manual Add Modal */}
-      <Modal visible={manualModalVisible} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKeyboardContainer}>
-            <View style={[styles.modalContent, { backgroundColor: '#fff' }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>
-                  {MEAL_TYPES.find((m) => m.key === activeMealType)?.label} - 食事の手動入力
-                </Text>
-                <TouchableOpacity onPress={() => setManualModalVisible(false)}>
-                  <Ionicons name="close" size={24} color={colors.icon} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalForm}>
-                <Text style={[styles.formLabel, { color: colors.text }]}>料理名</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: '#f2f2f7',
-                      borderColor: '#e5e5ea',
-                    },
-                  ]}
-                  placeholder="例: サラダ、チキンソテー"
-                  placeholderTextColor={colors.icon}
-                  value={manualName}
-                  onChangeText={setManualName}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>カロリー (kcal)</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: '#f2f2f7',
-                      borderColor: '#e5e5ea',
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 350"
-                  placeholderTextColor={colors.icon}
-                  value={manualCalories}
-                  onChangeText={setManualCalories}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>たんぱく質 (g)</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: '#f2f2f7',
-                      borderColor: '#e5e5ea',
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 25"
-                  placeholderTextColor={colors.icon}
-                  value={manualProtein}
-                  onChangeText={setManualProtein}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>脂質 (g)</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: '#f2f2f7',
-                      borderColor: '#e5e5ea',
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 10"
-                  placeholderTextColor={colors.icon}
-                  value={manualFat}
-                  onChangeText={setManualFat}
-                />
-
-                <Text style={[styles.formLabel, { color: colors.text }]}>炭水化物 (g)</Text>
-                <TextInput
-                  style={[
-                    styles.formInput,
-                    {
-                      color: colors.text,
-                      backgroundColor: '#f2f2f7',
-                      borderColor: '#e5e5ea',
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="例: 40"
-                  placeholderTextColor={colors.icon}
-                  value={manualCarbs}
-                  onChangeText={setManualCarbs}
-                />
-
-                <TouchableOpacity
-                  style={[styles.formSubmitBtn, { backgroundColor: colors.tint }]}
-                  onPress={handleAddManualFood}>
-                  <Text style={styles.formSubmitBtnText}>登録する</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
+      <ManualAddModal
+        visible={manualModalVisible}
+        activeMealType={activeMealType}
+        manualName={manualName}
+        manualCalories={manualCalories}
+        manualProtein={manualProtein}
+        manualFat={manualFat}
+        manualCarbs={manualCarbs}
+        colors={colors}
+        onClose={() => setManualModalVisible(false)}
+        onNameChange={setManualName}
+        onCaloriesChange={setManualCalories}
+        onProteinChange={setManualProtein}
+        onFatChange={setManualFat}
+        onCarbsChange={setManualCarbs}
+        onSubmit={handleAddManualFood}
+      />
 
       {/* 🍛 Recipe Add Modal */}
-      <Modal visible={recipeModalVisible} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, styles.recipeModalContent, { backgroundColor: '#fff' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {MEAL_TYPES.find((m) => m.key === activeMealType)?.label} - レシピ一覧から選択
-              </Text>
-              <TouchableOpacity onPress={() => setRecipeModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.icon} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Bar */}
-            <View style={styles.modalSearchContainer}>
-              <View style={[styles.searchBar, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
-                <Ionicons name="search-outline" size={16} color={colors.icon} style={styles.searchIcon} />
-                <TextInput
-                  style={[styles.searchInput, { color: colors.text }]}
-                  placeholder="レシピ名で検索..."
-                  placeholderTextColor={colors.icon}
-                  value={recipeSearchQuery}
-                  onChangeText={setRecipeSearchQuery}
-                />
-                {recipeSearchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setRecipeSearchQuery('')}>
-                    <Ionicons name="close-circle" size={16} color={colors.icon} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.recipeListContainer} showsVerticalScrollIndicator={false}>
-              {(() => {
-                const filteredRecipes = recipes.filter((r) =>
-                  r.name.toLowerCase().includes(recipeSearchQuery.toLowerCase())
-                );
-
-                if (filteredRecipes.length === 0) {
-                  return (
-                    <Text style={[styles.emptySectionText, { color: colors.icon, textAlign: 'center', padding: 20 }]}>
-                      {recipeSearchQuery ? '一致するレシピが見つかりません' : 'レシピが登録されていません。レシピ管理タブから作成してください。'}
-                    </Text>
-                  );
-                }
-
-                return filteredRecipes.map((recipe) => {
-                  // Calculate initial preset calories
-                  const tempLogItem: Omit<LogItem, 'calories'> = {
-                    id: 'temp',
-                    mealType: 'breakfast',
-                    type: 'recipe',
-                    name: recipe.name,
-                    protein: 0,
-                    fat: 0,
-                    carbs: 0,
-                    ingredients: recipe.ingredients.map((ri) => {
-                      const matched = ingredients.find((i) => i.id === ri.ingredientId);
-                      return {
-                        ingredientId: ri.ingredientId,
-                        name: matched ? matched.name : '',
-                        amount: ri.baseAmount,
-                        caloriesPer100g: matched ? matched.caloriesPer100g : 0,
-                        proteinPer100g: matched ? matched.proteinPer100g : 0,
-                        fatPer100g: matched ? matched.fatPer100g : 0,
-                        carbsPer100g: matched ? matched.carbsPer100g : 0,
-                      };
-                    }),
-                  };
-                  const calVal = calculateItemCalories(tempLogItem as LogItem);
-
-                  return (
-                    <TouchableOpacity
-                      key={recipe.id}
-                      style={[
-                        styles.recipeCard,
-                        {
-                          backgroundColor: '#f2f2f7',
-                          borderColor: '#e5e5ea',
-                        },
-                      ]}
-                      onPress={() => handleAddRecipeFood(recipe)}>
-                      <View>
-                        <Text style={[styles.recipeCardName, { color: colors.text }]}>{recipe.name}</Text>
-                        <Text style={[styles.recipeCardIngs, { color: colors.icon }]}>
-                          材料: {tempLogItem.ingredients?.map((i) => `${i.name}(${i.amount}g)`).join(', ')}
-                        </Text>
-                      </View>
-                      <View style={styles.alignRight}>
-                        <Text style={[styles.recipeCardKcal, { color: colors.tint }]}>{calVal} kcal</Text>
-                        <Text style={[styles.recipeCardAddText, { color: colors.icon }]}>＋ 追加</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                });
-              })()}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <RecipeAddModal
+        visible={recipeModalVisible}
+        activeMealType={activeMealType}
+        recipes={recipes}
+        ingredients={ingredients}
+        recipeSearchQuery={recipeSearchQuery}
+        colors={colors}
+        onClose={() => setRecipeModalVisible(false)}
+        onSearchChange={setRecipeSearchQuery}
+        onSelectRecipe={handleAddRecipeFood}
+      />
 
       {/* 🛒 Product Add Modal */}
       <Modal visible={productModalVisible} transparent animationType="slide">
@@ -1247,6 +574,109 @@ export default function HomeScreen() {
   );
 }
 
+// Product Selector Component (kept in index.tsx as it's only used here)
+const ProductSelector = ({
+  products,
+  onSelect,
+  colors,
+  theme,
+}: {
+  products: Product[];
+  onSelect: (product: Product) => void;
+  colors: any;
+  theme: string;
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredProducts = products.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.brand ?? '').toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <View style={styles.productModalContent}>
+      {/* Search Bar */}
+      <View style={styles.modalSearchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
+          <Ionicons name="search-outline" size={16} color={colors.icon} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="商品名・ブランドで検索..."
+            placeholderTextColor={colors.icon}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={16} color={colors.icon} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.productListContainer}
+        showsVerticalScrollIndicator={false}>
+        {filteredProducts.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="storefront-outline" size={48} color="#D1D5DB" />
+            <Text style={[styles.emptyTitle, { color: colors.icon }]}>
+              {searchQuery ? '一致する商品が見つかりません' : '市販品が登録されていません'}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: '#9CA3AF' }]}>
+              {searchQuery ? '検索ワードを変えてみてください' : '市販品管理タブから追加しましょう'}
+            </Text>
+          </View>
+        ) : (
+          filteredProducts.map((product) => (
+            <TouchableOpacity
+              key={product.id}
+              style={[styles.productCard, { backgroundColor: '#fff', borderColor: '#E5E7EB' }]}
+              onPress={() => onSelect(product)}>
+              <View style={styles.productInfo}>
+                {product.brand ? (
+                  <View style={styles.brandBadge}>
+                    <Text style={styles.brandBadgeText}>{product.brand}</Text>
+                  </View>
+                ) : null}
+                <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+                  {product.name}
+                </Text>
+                <Text style={[styles.productServing, { color: colors.icon }]}>
+                  {product.servingSize} あたり
+                </Text>
+              </View>
+
+              <View style={styles.productRight}>
+                <Text style={[styles.productCalories, { color: colors.tint }]}>
+                  {product.caloriesPerServing}
+                </Text>
+                <Text style={[styles.productCalUnit, { color: colors.icon }]}>kcal</Text>
+                <View style={[styles.productAddBtn, { backgroundColor: colors.tint }]}>
+                  <Text style={styles.productAddBtnText}>＋ 追加</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+        <View style={{ height: 30 }} />
+      </ScrollView>
+    </View>
+  );
+};
+
+// Calories calculation helper
+const mealCalories = (logs: LogItem[]) => {
+  const breakdown = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+  logs.forEach((item) => {
+    breakdown[item.mealType] += item.calories;
+  });
+  return breakdown;
+};
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -1255,6 +685,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  activityIndicator: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
     paddingHorizontal: 20,
@@ -1270,428 +709,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
   },
-  calendarContainer: {
-    paddingVertical: 10,
-  },
-  calendarScroll: {
-    paddingHorizontal: 15,
-  },
-  calendarDayCard: {
-    width: 50,
-    height: 70,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    position: 'relative',
-  },
-  calendarDayName: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  calendarDayNum: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  todayIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    position: 'absolute',
-    bottom: 6,
-  },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
-  },
-  progressCard: {
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  progressValue: {
-    fontSize: 26,
-    fontWeight: '800',
-  },
-  progressUnit: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  overTargetText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  underTargetText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(120, 120, 128, 0.16)',
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(120, 120, 128, 0.2)',
-    paddingTop: 14,
-  },
-  breakdownCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  breakdownValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  breakdownUnit: {
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  breakdownLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  pfcBreakdownRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(120, 120, 128, 0.2)',
-    paddingTop: 12,
-    marginTop: 4,
-  },
-  pfcItem: {
-    alignItems: 'center',
-  },
-  pfcLabel: {
-    fontSize: 10,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  pfcValue: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  pfcUnit: {
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  mealSectionCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 15,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  mealTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mealIcon: {
-    marginRight: 8,
-  },
-  mealTitleText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  mealSumText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  mealItemsList: {
-    marginBottom: 12,
-  },
-  emptySectionText: {
-    fontSize: 13,
-    textAlign: 'left',
-    paddingVertical: 10,
-    fontStyle: 'italic',
-  },
-  logItemContainer: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 12,
-  },
-  logItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logItemNameCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    paddingRight: 10,
-  },
-  chevronIcon: {
-    marginRight: 6,
-  },
-  logItemName: {
-    fontSize: 15,
-    fontWeight: '500',
-    flexShrink: 1,
-  },
-  presetBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    marginLeft: 6,
-  },
-  presetBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  logItemActionCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logItemCal: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginRight: 12,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  logItemPFC: {
-    fontSize: 9,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  ingredientsContainer: {
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 10,
-  },
-  ingredientsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  ingredientsTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  addIngBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    gap: 4,
-  },
-  addIngBtnText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  addIngForm: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 12,
-    gap: 8,
-  },
-  addIngFormTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  tinyLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  ingSelectorList: {
-    maxHeight: 120,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  ingSelectorItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#f2f2f7',
-  },
-  addIngAmountRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  addIngActionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  addIngCancelBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  addIngConfirmBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  ingredientRow: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(120,120,128,0.1)',
-  },
-  ingTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  ingBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  ingName: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  ingKcalDetail: {
-    fontSize: 10,
-    marginTop: 1,
-  },
-  ingPfcDetail: {
-    fontSize: 9,
-    marginTop: 1,
-  },
-  ingSubTotalCol: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  ingSubTotalPFC: {
-    fontSize: 9,
-    marginTop: 1,
-  },
-  ingDeleteBtn: {
-    padding: 2,
-  },
-  stepperBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#e5e7eb',
-  },
-  stepperBtnText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  weightInputBg: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    height: 28,
-    width: 66,
-    justifyContent: 'center',
-  },
-  weightInput: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flex: 1,
-    padding: 0,
-  },
-  weightUnitText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  ingSubTotalCal: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  mealActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  mealActionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 4,
-  },
-  mealActionText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  alignRight: {
-    alignItems: 'flex-end',
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
-  },
-  modalKeyboardContainer: {
-    width: '100%',
   },
   modalContent: {
     borderTopLeftRadius: 24,
@@ -1699,8 +724,8 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '100%',
   },
-  recipeModalContent: {
-    maxHeight: '80%',
+  productModalContent: {
+    flex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1711,34 +736,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  modalForm: {
-    gap: 12,
-  },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    fontSize: 15,
-  },
-  formSubmitBtn: {
-    borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  formSubmitBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  recipeListContainer: {
-    gap: 10,
-    paddingBottom: 20,
   },
   modalSearchContainer: {
     paddingHorizontal: 24,
@@ -1759,9 +756,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     padding: 0,
-  },
-  productModalContent: {
-    flex: 1,
   },
   productListContainer: {
     paddingHorizontal: 24,
@@ -1835,31 +829,5 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 13,
-  },
-  recipeCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  recipeCardName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  recipeCardIngs: {
-    fontSize: 11,
-    maxWidth: 220,
-  },
-  recipeCardKcal: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  recipeCardAddText: {
-    fontSize: 11,
-    fontWeight: 'bold',
   },
 });
