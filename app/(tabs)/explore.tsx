@@ -341,28 +341,31 @@ export default function ExploreScreen() {
             料理のテンプレートと食材データベース
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={() =>
-            Alert.alert(
-              'データリセット',
-              '全てのデータを初期状態に戻しますか？この操作は取り消せません。',
-              [
-                { text: 'キャンセル', style: 'cancel' },
-                {
-                  text: 'リセット',
-                  style: 'destructive',
-                  onPress: async () => {
-                    await initStorage(true);
-                    Alert.alert('完了', 'データを初期状態にリセットしました。アプリを再起動してください。');
-                  },
-                },
-              ]
-            )
-          }>
-          <Ionicons name="refresh" size={20} color={colors.tint} />
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        style={[
+          styles.floatingResetButton,
+          { top: insets.top + 12 }
+        ]}
+        onPress={() =>
+          Alert.alert(
+            'データリセット',
+            '全てのデータを初期状態に戻しますか？この操作は取り消せません。',
+            [
+              { text: 'キャンセル', style: 'cancel' },
+              {
+                text: 'リセット',
+                style: 'destructive',
+                onPress: async () => {
+                  await initStorage(true);
+                  Alert.alert('完了', 'データを初期状態にリセットしました。アプリを再起動してください。');
+                },
+              },
+            ]
+          )
+        }>
+        <Ionicons name="refresh" size={20} color={colors.tint} />
+      </TouchableOpacity>
 
       {/* Segmented Tab Controller */}
       <View style={styles.tabContainer}>
@@ -403,22 +406,29 @@ export default function ExploreScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Add Button - Fixed at top, not scrolling */}
+      <View style={styles.addButtonContainer}>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: colors.tint }]}
+          onPress={
+            activeTab === "recipes" ? handleOpenAddRecipe : handleOpenAddIng
+          }>
+          <Ionicons name="add-circle-outline" size={20} color="#fff" />
+          <Text style={styles.addBtnText}>
+            {activeTab === "recipes"
+              ? "新しいレシピを作成"
+              : "新しい食材を追加"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Main List */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         {activeTab === "recipes" ? (
           // 🍛 Recipes List View
           <View>
-            <TouchableOpacity
-              style={[styles.addBtn, { backgroundColor: colors.tint }]}
-              onPress={handleOpenAddRecipe}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="#fff" />
-              <Text style={styles.addBtnText}>新しいレシピを作成</Text>
-            </TouchableOpacity>
-
             {recipes.map((rec) => {
               // Calculate default recipe calories
               const defaultCalories = Math.round(
@@ -509,14 +519,6 @@ export default function ExploreScreen() {
         ) : (
           // 🥩 Ingredients List View
           <View>
-            <TouchableOpacity
-              style={[styles.addBtn, { backgroundColor: colors.tint }]}
-              onPress={handleOpenAddIng}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="#fff" />
-              <Text style={styles.addBtnText}>新しい食材を追加</Text>
-            </TouchableOpacity>
-
             <View
               style={[
                 styles.tableCard,
@@ -1107,6 +1109,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
+  addButtonContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
   addBtn: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1114,7 +1120,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,
-    marginBottom: 16,
   },
   addBtnText: {
     color: "#fff",
@@ -1379,8 +1384,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
-  resetButton: {
-    padding: 8,
+  floatingResetButton: {
+    position: 'absolute',
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   inlineActionRow: {
     flexDirection: "row",

@@ -459,7 +459,6 @@ export default function HomeScreen() {
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Mealog</Text>
         <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
           {formatDisplayDate(selectedDate)}
         </Text>
