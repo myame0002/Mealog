@@ -1,3 +1,4 @@
+import { BannerAdView } from "@/components/banner-ad";
 import CaloriesProgress from "@/components/calories-progress";
 import DateCarousel from "@/components/date-carousel";
 import ManualAddModal from "@/components/manual-add-modal";
@@ -492,18 +493,22 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
-            {formatDisplayDate(selectedDate)}
-          </Text>
+      {/* ステータスバー下部から広告＋ヘッダーを重ならずに表示 */}
+      <View style={{ paddingTop: insets.top }}>
+        <BannerAdView />
+        <View style={styles.headerInner}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
+              {formatDisplayDate(selectedDate)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => setSettingsModalVisible(true)}
+          >
+            <Ionicons name="settings-outline" size={28} color={colors.icon} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => setSettingsModalVisible(true)}
-        >
-          <Ionicons name="settings-outline" size={28} color={colors.icon} />
-        </TouchableOpacity>
       </View>
 
       {/* 📅 Horizontal Date Carousel */}
@@ -795,7 +800,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
   },
-  header: {
+  headerInner: {
     paddingHorizontal: 20,
     paddingBottom: 5,
     flexDirection: "row",
