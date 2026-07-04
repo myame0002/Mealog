@@ -1,5 +1,11 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 type CalendarDay = {
   dateStr: string;
@@ -13,7 +19,7 @@ type DateCarouselProps = {
   calendarDays: CalendarDay[];
   onDateChange: (dateStr: string) => void;
   colors: any;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
 };
 
 export default function DateCarousel({
@@ -23,9 +29,35 @@ export default function DateCarousel({
   colors,
   theme,
 }: DateCarouselProps) {
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  // On mount, position 'today' approximately at the 3rd slot from the left
+  useEffect(() => {
+    // Find today's index in the provided days
+    const todayIndex = calendarDays.findIndex((d) => d.isToday);
+    if (todayIndex === -1 || !scrollRef.current) return;
+
+    const itemWidth = 50; // must match styles.calendarDayCard.width
+    const itemMargin = 5; // styles.calendarDayCard.marginHorizontal
+    const itemSpacing = itemWidth + itemMargin * 2; // total space per item
+    const desiredLeftSlot = 2; // zero-based third slot
+    const contentPadding = 15; // styles.calendarScroll.paddingHorizontal
+
+    const x = Math.max(
+      0,
+      itemSpacing * (todayIndex - desiredLeftSlot) - contentPadding,
+    );
+    // @ts-ignore - scrollTo exists on ScrollView ref
+    scrollRef.current.scrollTo({ x, animated: true });
+  }, [calendarDays]);
   return (
     <View style={styles.calendarContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarScroll}>
+      <ScrollView
+        ref={(ref) => (scrollRef.current = ref)}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.calendarScroll}
+      >
         {calendarDays.map((day) => {
           const isSelected = day.dateStr === selectedDate;
           return (
@@ -34,25 +66,36 @@ export default function DateCarousel({
               style={[
                 styles.calendarDayCard,
                 isSelected && { backgroundColor: colors.tint },
-                !isSelected && { backgroundColor: '#F3F4F6' },
+                !isSelected && { backgroundColor: "#F3F4F6" },
               ]}
-              onPress={() => onDateChange(day.dateStr)}>
+              onPress={() => onDateChange(day.dateStr)}
+            >
               <Text
                 style={[
                   styles.calendarDayName,
-                  { color: isSelected ? '#fff' : colors.icon },
-                ]}>
+                  { color: isSelected ? "#fff" : colors.icon },
+                ]}
+              >
                 {day.dayName}
               </Text>
               <Text
                 style={[
                   styles.calendarDayNum,
-                  { color: isSelected ? '#fff' : colors.text },
-                  day.isToday && !isSelected && { color: colors.tint, fontWeight: 'bold' },
-                ]}>
+                  { color: isSelected ? "#fff" : colors.text },
+                  day.isToday &&
+                    !isSelected && { color: colors.tint, fontWeight: "bold" },
+                ]}
+              >
                 {day.dayNum}
               </Text>
-              {day.isToday && <View style={[styles.todayIndicator, { backgroundColor: isSelected ? '#fff' : colors.tint }]} />}
+              {day.isToday && (
+                <View
+                  style={[
+                    styles.todayIndicator,
+                    { backgroundColor: isSelected ? "#fff" : colors.tint },
+                  ]}
+                />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -72,27 +115,27 @@ const styles = StyleSheet.create({
     width: 50,
     height: 70,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: 'transparent',
-    position: 'relative',
+    borderColor: "transparent",
+    position: "relative",
   },
   calendarDayName: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   calendarDayNum: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   todayIndicator: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    position: 'absolute',
+    position: "absolute",
     bottom: 6,
   },
 });

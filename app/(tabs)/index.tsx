@@ -6,35 +6,35 @@ import MealSection from "@/components/meal-section";
 import RecipeAddModal from "@/components/recipe-add-modal";
 import SettingsModal from "@/components/settings-modal";
 import {
-  DailyTargets,
-  Ingredient,
-  LogItem,
-  Product,
-  Recipe,
-  calculateItemCalories,
-  calculateItemPFC,
-  getDailyTargets,
-  getDayLog,
-  getIngredients,
-  getProducts,
-  getRecipes,
-  initStorage,
-  saveDailyTargets,
-  saveDayLog,
+    DailyTargets,
+    Ingredient,
+    LogItem,
+    Product,
+    Recipe,
+    calculateItemCalories,
+    calculateItemPFC,
+    getDailyTargets,
+    getDayLog,
+    getIngredients,
+    getProducts,
+    getRecipes,
+    initStorage,
+    saveDailyTargets,
+    saveDayLog,
 } from "@/constants/storage";
 import { Colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  AppState,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    AppState,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -155,14 +155,17 @@ export default function HomeScreen() {
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 (${weekdays[d.getDay()]})`;
   };
 
-  // Generate 7 days centered around selected date for top selector
+  // Generate a wider, scrollable range of dates anchored to today so
+  // the user can freely scroll and pick a date (not forced to center)
   const calendarDays = useMemo(() => {
     if (!selectedDate) return [];
-    const baseDate = parseLocalDate(selectedDate);
+    const today = new Date();
+    const baseDate = today; // anchor the list to today
     const days = [];
     const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const range = 15; // show 31 days (15 before and 15 after)
 
-    for (let i = -3; i <= 3; i++) {
+    for (let i = -range; i <= range; i++) {
       const d = new Date(baseDate);
       d.setDate(baseDate.getDate() + i);
       const dateStr = formatDateString(d);
