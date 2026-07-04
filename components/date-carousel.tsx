@@ -12,6 +12,7 @@ type CalendarDay = {
   dayNum: number;
   dayName: string;
   isToday: boolean;
+  hasLog?: boolean;
 };
 
 type DateCarouselProps = {
@@ -66,14 +67,23 @@ export default function DateCarousel({
               style={[
                 styles.calendarDayCard,
                 isSelected && { backgroundColor: colors.tint },
-                !isSelected && { backgroundColor: "#F3F4F6" },
+                !isSelected && {
+                  backgroundColor: day.hasLog ? "#FFF7E6" : "#F3F4F6",
+                  borderColor: day.hasLog ? "#FFD166" : "transparent",
+                },
               ]}
               onPress={() => onDateChange(day.dateStr)}
             >
               <Text
                 style={[
                   styles.calendarDayName,
-                  { color: isSelected ? "#fff" : colors.icon },
+                  {
+                    color: isSelected
+                      ? "#fff"
+                      : day.hasLog
+                        ? "#B45309"
+                        : colors.icon,
+                  },
                 ]}
               >
                 {day.dayName}
@@ -81,7 +91,13 @@ export default function DateCarousel({
               <Text
                 style={[
                   styles.calendarDayNum,
-                  { color: isSelected ? "#fff" : colors.text },
+                  {
+                    color: isSelected
+                      ? "#fff"
+                      : day.hasLog
+                        ? "#B45309"
+                        : colors.text,
+                  },
                   day.isToday &&
                     !isSelected && { color: colors.tint, fontWeight: "bold" },
                 ]}

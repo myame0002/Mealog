@@ -13,6 +13,7 @@ import {
     Recipe,
     calculateItemCalories,
     calculateItemPFC,
+    getAllDayLogs,
     getDailyTargets,
     getDayLog,
     getIngredients,
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   // App States
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [logs, setLogs] = useState<LogItem[]>([]);
+  const [loggedDates, setLoggedDates] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -101,6 +103,7 @@ export default function HomeScreen() {
       setSelectedDate(todayStr);
       await loadMasterData();
       await loadLogs(todayStr);
+      await loadLoggedDates();
       await loadDailyTargets();
       setLoading(false);
     };
@@ -128,6 +131,11 @@ export default function HomeScreen() {
   const loadLogs = async (dateStr: string) => {
     const dayLogs = await getDayLog(dateStr);
     setLogs(dayLogs);
+  };
+
+  const loadLoggedDates = async () => {
+    const allLogs = await getAllDayLogs();
+    setLoggedDates(allLogs.map((entry) => entry.date));
   };
 
   const loadDailyTargets = async () => {
@@ -174,10 +182,11 @@ export default function HomeScreen() {
         dayNum: d.getDate(),
         dayName: weekdays[d.getDay()],
         isToday: formatDateString(new Date()) === dateStr,
+        hasLog: loggedDates.includes(dateStr),
       });
     }
     return days;
-  }, [selectedDate]);
+  }, [selectedDate, loggedDates]);
 
   // Log Operations
   const handleDateChange = async (dateStr: string) => {
