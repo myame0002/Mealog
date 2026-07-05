@@ -55,13 +55,13 @@ export interface DayLog {
 // 市販品マスタ
 export interface Product {
   id: string;
-  name: string; // 商品名 e.g. "ファミマ サラダチキン"
-  brand?: string; // メーカー・ブランド e.g. "ファミリーマート"
-  caloriesPerServing: number; // 1食あたりカロリー
-  servingSize: string; // 内容量 e.g. "110g" "1本" "1袋"
-  proteinPerServing: number; // たんぱく質 (g/食)
-  fatPerServing: number; // 脂質 (g/食)
-  carbsPerServing: number; // 炭水化物 (g/食)
+  name: string;
+  brand?: string;
+  caloriesPerServing: number;
+  servingSize: string;
+  proteinPerServing: number | null;
+  fatPerServing: number | null;
+  carbsPerServing: number | null;
 }
 
 // --- STORAGE KEYS ---

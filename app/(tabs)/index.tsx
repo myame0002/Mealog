@@ -5,6 +5,7 @@ import ManualAddModal from "@/components/manual-add-modal";
 import MealSection from "@/components/meal-section";
 import RecipeAddModal from "@/components/recipe-add-modal";
 import SettingsModal from "@/components/settings-modal";
+import BarcodeScannerModal from "@/components/barcode-scanner-modal";
 import {
     DailyTargets,
     Ingredient,
@@ -66,6 +67,7 @@ export default function HomeScreen() {
   const [recipeModalVisible, setRecipeModalVisible] = useState(false);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
   const [activeMealType, setActiveMealType] =
     useState<LogItem["mealType"]>("breakfast");
 
@@ -78,6 +80,9 @@ export default function HomeScreen() {
 
   // Search state for Recipe Modal
   const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
+
+  // Barcode scanned product name
+  const [scannedProductName, setScannedProductName] = useState("");
 
   // Add ingredient to recipe states
   const [showAddIngToRecipe, setShowAddIngToRecipe] = useState<string | null>(
@@ -259,6 +264,32 @@ export default function HomeScreen() {
     // モーダルを開く前に最新のマスタデータを読み込む
     await loadMasterData();
     setProductModalVisible(true);
+  };
+
+  const handleOpenBarcodeScanner = () => {
+    setActiveMealType(activeMealType);
+    setBarcodeScannerVisible(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setBarcodeScannerVisible(false);
+    
+    // スキャンしたバーコードを商品名として使用
+    setScannedProductName(barcode);
+    
+    // 既存の商品を検索
+    const existingProduct = products.find(
+      (p) => p.name.toLowerCase() === barcode.toLowerCase()
+    );
+
+    if (existingProduct) {
+      // 既存商品が見つかった場合、直接追加
+      await handleAddProductFood(existingProduct);
+      setScannedProductName("");
+    } else {
+      // 新規商品の場合、市販品モーダルを開いて手動登録
+      setProductModalVisible(true);
+    }
   };
 
   const handleAddRecipeFood = async (recipe: Recipe) => {
@@ -648,7 +679,6 @@ export default function HomeScreen() {
                 <Ionicons name="close" size={24} color={colors.icon} />
               </TouchableOpacity>
             </View>
-
             <ProductSelector
               products={products}
               onSelect={handleAddProductFood}
@@ -658,6 +688,14 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* 📷 Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        visible={barcodeScannerVisible}
+        colors={colors}
+        onClose={() => setBarcodeScannerVisible(false)}
+        onBarcodeScanned={handleBarcodeScanned}
+      />
     </View>
   );
 }
@@ -955,5 +993,20 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 13,
+  },
+  barcodeScanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  barcodeScanButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });

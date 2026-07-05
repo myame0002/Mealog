@@ -35,7 +35,7 @@ export function TabController({
             { color: activeTab === "recipes" ? "#fff" : colors.text },
           ]}
         >
-          レシピマスタ ({recipesCount})
+          レシピ ({recipesCount})
         </Text>
       </TouchableOpacity>
 
@@ -53,7 +53,7 @@ export function TabController({
             { color: activeTab === "ingredients" ? "#fff" : colors.text },
           ]}
         >
-          食材マスタ ({ingredientsCount})
+          食材 ({ingredientsCount})
         </Text>
       </TouchableOpacity>
     </View>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 10,
-    gap: 10,
+    gap: 8,
   },
   tabButton: {
     flex: 1,
@@ -74,7 +74,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "bold",
   },
 });
+

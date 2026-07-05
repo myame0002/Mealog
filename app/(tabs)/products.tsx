@@ -21,6 +21,7 @@ import {
   deleteProduct,
   Product,
 } from '@/constants/storage';
+import BarcodeScannerModal from '@/components/barcode-scanner-modal';
 
 export default function ProductsScreen() {
   const theme = 'light';
@@ -30,6 +31,7 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
 
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,10 +81,45 @@ export default function ProductsScreen() {
     setFormBrand(product.brand ?? '');
     setFormCalories(String(product.caloriesPerServing));
     setFormServing(product.servingSize);
-    setFormProtein(String(product.proteinPerServing ?? 0));
-    setFormFat(String(product.fatPerServing ?? 0));
-    setFormCarbs(String(product.carbsPerServing ?? 0));
+    setFormProtein(product.proteinPerServing !== null ? String(product.proteinPerServing) : '');
+    setFormFat(product.fatPerServing !== null ? String(product.fatPerServing) : '');
+    setFormCarbs(product.carbsPerServing !== null ? String(product.carbsPerServing) : '');
     setModalVisible(true);
+  };
+
+  const calculateValue = (input: string): number => {
+    const trimmed = input.trim();
+    
+    if (!trimmed) return 0;
+    
+    // 演算子が含まれている場合は計算式として評価
+    if (/[+\-*/]/.test(trimmed)) {
+      try {
+        // 安全のため、数値、演算子（+-*/）、括弧、小数点のみ許可
+        const sanitized = trimmed.replace(/[^0-9+\-*/().]/g, '');
+        if (sanitized !== trimmed) {
+          throw new Error('Invalid characters');
+        }
+        
+        // Functionコンストラクタを使用（evalより安全）
+        const result = new Function('return ' + sanitized)();
+        
+        if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+          return Math.round(result * 100) / 100; // 小数点2桁まで
+        }
+      } catch (error) {
+        console.error('Calculation error:', error);
+      }
+      return 0;
+    }
+    
+    // 演算子がない場合は直接数値としてパース
+    const directNumber = parseFloat(trimmed);
+    if (!isNaN(directNumber)) {
+      return directNumber;
+    }
+    
+    return 0;
   };
 
   const handleSave = async () => {
@@ -90,24 +127,21 @@ export default function ProductsScreen() {
       Alert.alert('入力エラー', '商品名を入力してください。');
       return;
     }
-    const cal = parseInt(formCalories, 10);
-    if (isNaN(cal) || cal < 0) {
-      Alert.alert('入力エラー', 'カロリーに正しい数値を入力してください。');
+    
+    const cal = calculateValue(formCalories);
+    if (cal < 0) {
+      Alert.alert('入力エラー', 'カロリーに正しい数値または計算式を入力してください。');
       return;
     }
+    
     if (!formServing.trim()) {
       Alert.alert('入力エラー', '内容量を入力してください。（例: 110g、1本）');
       return;
     }
 
-    const protein = formProtein.trim() ? parseFloat(formProtein) : 0;
-    const fat = formFat.trim() ? parseFloat(formFat) : 0;
-    const carbs = formCarbs.trim() ? parseFloat(formCarbs) : 0;
-
-    if (isNaN(protein) || isNaN(fat) || isNaN(carbs)) {
-      Alert.alert('入力エラー', 'PFCには正しい数値を入力してください。');
-      return;
-    }
+    const protein = calculateValue(formProtein);
+    const fat = calculateValue(formFat);
+    const carbs = calculateValue(formCarbs);
 
     const product: Product = {
       id: editingId || `prod_${Date.now()}`,
@@ -161,6 +195,91 @@ export default function ProductsScreen() {
     ]);
   };
 
+  // --- BARCODE SCANNER ---
+
+  const handleOpenBarcodeScanner = () => {
+    setBarcodeScannerVisible(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setBarcodeScannerVisible(false);
+    
+    // Open Food Factsから商品情報を取得
+    Alert.alert('検索中', '商品情報を取得しています...');
+    
+    try {
+      const { searchProductByBarcode } = await import('@/utils/openfoodfacts');
+      const productInfo = await searchProductByBarcode(barcode);
+      
+      if (productInfo && productInfo.name !== barcode) {
+        // 商品情報が取得できた場合、フォームに設定
+        setEditingId(null);
+        setFormName(productInfo.name);
+        setFormBrand(productInfo.brand || '');
+        setFormCalories(String(productInfo.caloriesPerServing));
+        setFormProtein(String(productInfo.proteinPerServing));
+        setFormFat(String(productInfo.fatPerServing));
+        setFormCarbs(String(productInfo.carbsPerServing));
+        setFormServing(productInfo.servingSize);
+        
+        // 注意書き付きのアラートを表示
+        Alert.alert(
+          '商品情報を取得しました',
+          `商品名: ${productInfo.name}\nカロリー: ${productInfo.caloriesPerServing}kcal\n\n※ この情報はユーザー投稿型データベースのため、正確性は保証されていません。\n※ 表示されている栄養成分は1食分の値ではない場合があります。\n\n内容を確認して「OK」を押すと、登録画面が開きます。`,
+          [{ text: 'OK', onPress: () => setModalVisible(true) }]
+        );
+      } else {
+        // 商品情報が見つからなかった場合
+        Alert.alert(
+          '商品情報が見つかりませんでした',
+          'このバーコードの商品情報は登録されていません。\n\n手動で商品を登録してください。',
+          [
+            { text: 'キャンセル', style: 'cancel' },
+            {
+              text: '手動で登録',
+              onPress: () => {
+                // バーコードを商品名にして手動登録モーダルを開く
+                setEditingId(null);
+                setFormName(barcode);
+                setFormBrand('');
+                setFormCalories('');
+                setFormServing('');
+                setFormProtein('');
+                setFormFat('');
+                setFormCarbs('');
+                setModalVisible(true);
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      Alert.alert(
+        'エラー',
+        '商品情報の取得に失敗しました。\n\n手動で商品を登録してください。',
+        [
+          { text: 'キャンセル', style: 'cancel' },
+          {
+            text: '手動で登録',
+            onPress: () => {
+              // バーコードを商品名にして手動登録モーダルを開く
+              setEditingId(null);
+              setFormName(barcode);
+              setFormBrand('');
+              setFormCalories('');
+              setFormServing('');
+              setFormProtein('');
+              setFormFat('');
+              setFormCarbs('');
+              setModalVisible(true);
+            }
+          }
+        ]
+      );
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -187,11 +306,18 @@ export default function ProductsScreen() {
             コンビニ・スーパーの商品カロリー帳
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.addHeaderBtn, { backgroundColor: colors.tint }]}
-          onPress={handleOpenAdd}>
-          <Ionicons name="add" size={20} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.addHeaderBtn, { backgroundColor: '#34C759' }]}
+            onPress={handleOpenBarcodeScanner}>
+            <Ionicons name="barcode-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addHeaderBtn, { backgroundColor: colors.tint }]}
+            onPress={handleOpenAdd}>
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar */}
@@ -246,7 +372,7 @@ export default function ProductsScreen() {
                   {product.servingSize} あたり
                 </Text>
                 <Text style={[styles.productPFC, { color: colors.icon }]}>
-                  P:{product.proteinPerServing || 0}g F:{product.fatPerServing || 0}g C:{product.carbsPerServing || 0}g
+                  P:{product.proteinPerServing !== null ? `${product.proteinPerServing}g` : '-'} F:{product.fatPerServing !== null ? `${product.fatPerServing}g` : '-'} C:{product.carbsPerServing !== null ? `${product.carbsPerServing}g` : '-'}
                 </Text>
               </View>
 
@@ -274,6 +400,14 @@ export default function ProductsScreen() {
         )}
         <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* 📷 Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        visible={barcodeScannerVisible}
+        colors={colors}
+        onClose={() => setBarcodeScannerVisible(false)}
+        onBarcodeScanned={handleBarcodeScanned}
+      />
 
       {/* Add/Edit Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -317,11 +451,12 @@ export default function ProductsScreen() {
                      <Text style={[styles.formLabel, { color: colors.text }]}>カロリー (kcal) *</Text>
                      <TextInput
                        style={[styles.formInput, { color: colors.text }]}
-                       keyboardType="numeric"
-                       placeholder="例: 113"
+                       placeholder="例: 113 または 44*3.5"
                        placeholderTextColor={colors.icon}
                        value={formCalories}
                        onChangeText={setFormCalories}
+                       autoCapitalize="none"
+                       autoCorrect={false}
                      />
                    </View>
                    <View style={[styles.formHalf, { marginLeft: 10 }]}>
@@ -339,8 +474,7 @@ export default function ProductsScreen() {
                  <Text style={[styles.formLabel, { color: colors.text }]}>たんぱく質 (g/食)</Text>
                  <TextInput
                    style={[styles.formInput, { color: colors.text }]}
-                   keyboardType="numeric"
-                   placeholder="例: 23"
+                   placeholder="例: 23 または 10*2.3"
                    placeholderTextColor={colors.icon}
                    value={formProtein}
                    onChangeText={setFormProtein}
@@ -349,8 +483,7 @@ export default function ProductsScreen() {
                  <Text style={[styles.formLabel, { color: colors.text }]}>脂質 (g/食)</Text>
                  <TextInput
                    style={[styles.formInput, { color: colors.text }]}
-                   keyboardType="numeric"
-                   placeholder="例: 1.1"
+                   placeholder="例: 1.1 または 0.5*2"
                    placeholderTextColor={colors.icon}
                    value={formFat}
                    onChangeText={setFormFat}
@@ -359,8 +492,7 @@ export default function ProductsScreen() {
                  <Text style={[styles.formLabel, { color: colors.text }]}>炭水化物 (g/食)</Text>
                  <TextInput
                    style={[styles.formInput, { color: colors.text }]}
-                   keyboardType="numeric"
-                   placeholder="例: 0"
+                   placeholder="例: 0 または 5*2"
                    placeholderTextColor={colors.icon}
                    value={formCarbs}
                    onChangeText={setFormCarbs}
@@ -405,6 +537,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginTop: 2,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
   },
   addHeaderBtn: {
     width: 38,
