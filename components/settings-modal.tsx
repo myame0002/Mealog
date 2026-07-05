@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 type SettingsModalProps = {
   visible: boolean;
   onClose: () => void;
+  onSave?: (targets: DailyTargets) => void;
   colors: any;
   theme: "light" | "dark";
 };
@@ -28,6 +29,7 @@ type SettingsModalProps = {
 export default function SettingsModal({
   visible,
   onClose,
+  onSave,
   colors,
   theme,
 }: SettingsModalProps) {
@@ -37,6 +39,12 @@ export default function SettingsModal({
     protein: 50,
     fat: 50,
     carbs: 250,
+  });
+  const [inputValues, setInputValues] = useState({
+    calories: String(2000),
+    protein: String(50),
+    fat: String(50),
+    carbs: String(250),
   });
 
   // Load targets when modal opens
@@ -49,17 +57,34 @@ export default function SettingsModal({
   const loadTargets = async () => {
     const loadedTargets = await getDailyTargets();
     setTargets(loadedTargets);
+    setInputValues({
+      calories: String(loadedTargets.calories),
+      protein: String(loadedTargets.protein),
+      fat: String(loadedTargets.fat),
+      carbs: String(loadedTargets.carbs),
+    });
   };
 
   const handleSave = async () => {
-    await saveDailyTargets(targets);
+    const calories = parseInt(inputValues.calories, 10);
+    const protein = parseInt(inputValues.protein, 10);
+    const fat = parseInt(inputValues.fat, 10);
+    const carbs = parseInt(inputValues.carbs, 10);
+    const newTargets: DailyTargets = {
+      calories: !isNaN(calories) && calories >= 0 ? calories : targets.calories,
+      protein: !isNaN(protein) && protein >= 0 ? protein : targets.protein,
+      fat: !isNaN(fat) && fat >= 0 ? fat : targets.fat,
+      carbs: !isNaN(carbs) && carbs >= 0 ? carbs : targets.carbs,
+    };
+    await saveDailyTargets(newTargets);
+    setTargets(newTargets);
+    onSave?.(newTargets);
     onClose();
   };
 
-  const updateTarget = (field: keyof DailyTargets, value: string) => {
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue >= 0) {
-      setTargets((prev) => ({ ...prev, [field]: numValue }));
+  const updateInputValue = (field: keyof DailyTargets, value: string) => {
+    if (/^\d*$/.test(value)) {
+      setInputValues((prev) => ({ ...prev, [field]: value }));
     }
   };
 
@@ -119,8 +144,8 @@ export default function SettingsModal({
                 >
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
-                    value={targets.calories.toString()}
-                    onChangeText={(text) => updateTarget("calories", text)}
+                    value={inputValues.calories}
+                    onChangeText={(text) => updateInputValue("calories", text)}
                     keyboardType="numeric"
                     placeholder="2000"
                     placeholderTextColor={colors.icon}
@@ -147,8 +172,8 @@ export default function SettingsModal({
                 >
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
-                    value={targets.protein.toString()}
-                    onChangeText={(text) => updateTarget("protein", text)}
+                    value={inputValues.protein}
+                    onChangeText={(text) => updateInputValue("protein", text)}
                     keyboardType="numeric"
                     placeholder="50"
                     placeholderTextColor={colors.icon}
@@ -173,8 +198,8 @@ export default function SettingsModal({
                 >
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
-                    value={targets.fat.toString()}
-                    onChangeText={(text) => updateTarget("fat", text)}
+                    value={inputValues.fat}
+                    onChangeText={(text) => updateInputValue("fat", text)}
                     keyboardType="numeric"
                     placeholder="50"
                     placeholderTextColor={colors.icon}
@@ -199,8 +224,8 @@ export default function SettingsModal({
                 >
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
-                    value={targets.carbs.toString()}
-                    onChangeText={(text) => updateTarget("carbs", text)}
+                    value={inputValues.carbs}
+                    onChangeText={(text) => updateInputValue("carbs", text)}
                     keyboardType="numeric"
                     placeholder="250"
                     placeholderTextColor={colors.icon}

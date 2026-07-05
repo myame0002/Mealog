@@ -624,6 +624,7 @@ export default function HomeScreen() {
       <SettingsModal
         visible={settingsModalVisible}
         onClose={() => setSettingsModalVisible(false)}
+        onSave={setDailyTargets}
         colors={colors}
         theme={theme as "light" | "dark"}
       />
