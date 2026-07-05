@@ -1,17 +1,16 @@
+import { Ingredient, Recipe, RecipeIngredient } from "@/constants/storage";
+import { Colors } from "@/constants/theme";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   Modal,
   ScrollView,
   StyleSheet,
-  Alert,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "@/constants/theme";
-import { Ingredient, Recipe, RecipeIngredient } from "@/constants/storage";
 
 interface RecipeBuilderModalProps {
   visible: boolean;
@@ -66,7 +65,12 @@ export function RecipeBuilderModal({
   const [ingredientSearchQuery, setIngredientSearchQuery] = useState("");
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.modalBackdrop}>
         <View
           style={[
@@ -112,18 +116,18 @@ export function RecipeBuilderModal({
               onChangeText={onRecipeNameChange}
             />
 
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.formLabel, { color: colors.text }]}>
-                  配合する材料
-                </Text>
-                <TouchableOpacity
-                  style={[styles.smallAddBtn, { backgroundColor: colors.tint }]}
-                  onPress={onStartIngSelection}
-                >
-                  <Ionicons name="add" size={14} color="#fff" />
-                  <Text style={styles.smallAddBtnText}>材料追加</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                配合する材料
+              </Text>
+              <TouchableOpacity
+                style={[styles.smallAddBtn, { backgroundColor: colors.tint }]}
+                onPress={onStartIngSelection}
+              >
+                <Ionicons name="add" size={14} color="#fff" />
+                <Text style={styles.smallAddBtnText}>材料追加</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* List of currently selected ingredients in the recipe builder */}
             <View
@@ -144,9 +148,7 @@ export function RecipeBuilderModal({
                 </Text>
               ) : (
                 selectedIngredients.map((ri) => {
-                  const ing = ingredients.find(
-                    (i) => i.id === ri.ingredientId,
-                  );
+                  const ing = ingredients.find((i) => i.id === ri.ingredientId);
                   const kcal = Math.round(
                     (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
                   );
@@ -166,30 +168,64 @@ export function RecipeBuilderModal({
                           <View style={styles.inlineWeightEditRow}>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
-                              onPress={() => onUpdateIngWeight(ri.ingredientId, ri.baseAmount - 10)}>
+                              onPress={() =>
+                                onUpdateIngWeight(
+                                  ri.ingredientId,
+                                  ri.baseAmount - 10,
+                                )
+                              }
+                            >
                               <Text style={styles.inlineStepperText}>-10g</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
-                              onPress={() => onUpdateIngWeight(ri.ingredientId, ri.baseAmount - 1)}>
+                              onPress={() =>
+                                onUpdateIngWeight(
+                                  ri.ingredientId,
+                                  ri.baseAmount - 1,
+                                )
+                              }
+                            >
                               <Text style={styles.inlineStepperText}>-1g</Text>
                             </TouchableOpacity>
                             <TextInput
                               keyboardType="numeric"
-                              style={[styles.inlineWeightInput, { color: colors.text }]}
+                              style={[
+                                styles.inlineWeightInput,
+                                { color: colors.text },
+                              ]}
                               value={tempIngWeight}
                               onChangeText={onSaveWeightEdit}
                               onBlur={onSaveWeightEdit}
                             />
-                            <Text style={[styles.inlineWeightUnit, { color: colors.icon }]}>g</Text>
+                            <Text
+                              style={[
+                                styles.inlineWeightUnit,
+                                { color: colors.icon },
+                              ]}
+                            >
+                              g
+                            </Text>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
-                              onPress={() => onUpdateIngWeight(ri.ingredientId, ri.baseAmount + 1)}>
+                              onPress={() =>
+                                onUpdateIngWeight(
+                                  ri.ingredientId,
+                                  ri.baseAmount + 1,
+                                )
+                              }
+                            >
                               <Text style={styles.inlineStepperText}>+1g</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
-                              onPress={() => onUpdateIngWeight(ri.ingredientId, ri.baseAmount + 10)}>
+                              onPress={() =>
+                                onUpdateIngWeight(
+                                  ri.ingredientId,
+                                  ri.baseAmount + 10,
+                                )
+                              }
+                            >
                               <Text style={styles.inlineStepperText}>+10g</Text>
                             </TouchableOpacity>
                           </View>
@@ -208,18 +244,37 @@ export function RecipeBuilderModal({
                         {isEditing ? (
                           <TouchableOpacity
                             style={styles.saveWeightBtn}
-                            onPress={onSaveWeightEdit}>
+                            onPress={onSaveWeightEdit}
+                          >
                             <Ionicons name="checkmark" size={16} color="#fff" />
                           </TouchableOpacity>
                         ) : (
                           <>
                             <TouchableOpacity
                               style={styles.editWeightBtn}
-                              onPress={() => onStartEditWeight(ri.ingredientId, ri.baseAmount)}>
-                              <Ionicons name="create-outline" size={16} color={colors.tint} />
+                              onPress={() =>
+                                onStartEditWeight(
+                                  ri.ingredientId,
+                                  ri.baseAmount,
+                                )
+                              }
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                size={16}
+                                color={colors.tint}
+                              />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => onRemoveIngFromRecipe(ri.ingredientId)}>
-                              <Ionicons name="close-circle-outline" size={20} color="#ff453a" />
+                            <TouchableOpacity
+                              onPress={() =>
+                                onRemoveIngFromRecipe(ri.ingredientId)
+                              }
+                            >
+                              <Ionicons
+                                name="close-circle-outline"
+                                size={20}
+                                color="#ff453a"
+                              />
                             </TouchableOpacity>
                           </>
                         )}
@@ -260,9 +315,16 @@ export function RecipeBuilderModal({
                       食材名
                     </Text>
                     <View style={styles.ingredientSearchBar}>
-                      <Ionicons name="search-outline" size={14} color={colors.icon} />
+                      <Ionicons
+                        name="search-outline"
+                        size={14}
+                        color={colors.icon}
+                      />
                       <TextInput
-                        style={[styles.ingredientSearchInput, { color: colors.text }]}
+                        style={[
+                          styles.ingredientSearchInput,
+                          { color: colors.text },
+                        ]}
                         placeholder="食材を検索..."
                         placeholderTextColor={colors.icon}
                         value={ingredientSearchQuery}
@@ -271,8 +333,14 @@ export function RecipeBuilderModal({
                         autoCorrect={false}
                       />
                       {ingredientSearchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setIngredientSearchQuery("")}>
-                          <Ionicons name="close-circle" size={14} color={colors.icon} />
+                        <TouchableOpacity
+                          onPress={() => setIngredientSearchQuery("")}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={14}
+                            color={colors.icon}
+                          />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -282,7 +350,9 @@ export function RecipeBuilderModal({
                     >
                       {ingredients
                         .filter((ing) =>
-                          ing.name.toLowerCase().includes(ingredientSearchQuery.toLowerCase())
+                          ing.name
+                            .toLowerCase()
+                            .includes(ingredientSearchQuery.toLowerCase()),
                         )
                         .map((ing) => {
                           const isSelected = builderSelectedIngId === ing.id;
@@ -309,11 +379,14 @@ export function RecipeBuilderModal({
                                   <Text
                                     style={{
                                       fontSize: 10,
-                                      color: isSelected ? "rgba(255,255,255,0.8)" : colors.icon,
+                                      color: isSelected
+                                        ? "rgba(255,255,255,0.8)"
+                                        : colors.icon,
                                       marginTop: 2,
                                     }}
                                   >
-                                    目安: {ing.servingSize} ({ing.servingAmount}g)
+                                    目安: {ing.servingSize} ({ing.servingAmount}
+                                    g)
                                   </Text>
                                 )}
                               </View>
@@ -371,7 +444,9 @@ export function RecipeBuilderModal({
                     ]}
                     onPress={onAddIngToRecipe}
                   >
-                    <Text style={[styles.inlineActionBtnText, { color: "#fff" }]}>
+                    <Text
+                      style={[styles.inlineActionBtnText, { color: "#fff" }]}
+                    >
                       レシピに加える
                     </Text>
                   </TouchableOpacity>

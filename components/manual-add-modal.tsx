@@ -1,12 +1,21 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import React from "react";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const MEAL_TYPES = [
-  { key: 'breakfast', label: '朝食' },
-  { key: 'lunch', label: '昼食' },
-  { key: 'dinner', label: '夕食' },
-  { key: 'snack', label: '間食・その他' },
+  { key: "breakfast", label: "朝食" },
+  { key: "lunch", label: "昼食" },
+  { key: "dinner", label: "夕食" },
+  { key: "snack", label: "間食・その他" },
 ] as const;
 
 type ManualAddModalProps = {
@@ -44,15 +53,22 @@ export default function ManualAddModal({
   onCarbsChange,
   onSubmit,
 }: ManualAddModalProps) {
-  const mealLabel = MEAL_TYPES.find((m) => m.key === activeMealType)?.label || '食事';
+  const mealLabel =
+    MEAL_TYPES.find((m) => m.key === activeMealType)?.label || "食事";
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.modalBackdrop}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalKeyboardContainer}>
-          <View style={[styles.modalContent, { backgroundColor: '#fff' }]}>
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalKeyboardContainer}
+        >
+          <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {mealLabel} - 食事の手動入力
@@ -63,14 +79,16 @@ export default function ManualAddModal({
             </View>
 
             <View style={styles.modalForm}>
-              <Text style={[styles.formLabel, { color: colors.text }]}>料理名</Text>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                料理名
+              </Text>
               <TextInput
                 style={[
                   styles.formInput,
                   {
                     color: colors.text,
-                    backgroundColor: '#f2f2f7',
-                    borderColor: '#e5e5ea',
+                    backgroundColor: "#f2f2f7",
+                    borderColor: "#e5e5ea",
                   },
                 ]}
                 placeholder="例: サラダ、チキンソテー"
@@ -79,14 +97,16 @@ export default function ManualAddModal({
                 onChangeText={onNameChange}
               />
 
-              <Text style={[styles.formLabel, { color: colors.text }]}>カロリー (kcal)</Text>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                カロリー (kcal)
+              </Text>
               <TextInput
                 style={[
                   styles.formInput,
                   {
                     color: colors.text,
-                    backgroundColor: '#f2f2f7',
-                    borderColor: '#e5e5ea',
+                    backgroundColor: "#f2f2f7",
+                    borderColor: "#e5e5ea",
                   },
                 ]}
                 keyboardType="numeric"
@@ -96,14 +116,16 @@ export default function ManualAddModal({
                 onChangeText={onCaloriesChange}
               />
 
-              <Text style={[styles.formLabel, { color: colors.text }]}>たんぱく質 (g)</Text>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                たんぱく質 (g)
+              </Text>
               <TextInput
                 style={[
                   styles.formInput,
                   {
                     color: colors.text,
-                    backgroundColor: '#f2f2f7',
-                    borderColor: '#e5e5ea',
+                    backgroundColor: "#f2f2f7",
+                    borderColor: "#e5e5ea",
                   },
                 ]}
                 keyboardType="numeric"
@@ -113,14 +135,16 @@ export default function ManualAddModal({
                 onChangeText={onProteinChange}
               />
 
-              <Text style={[styles.formLabel, { color: colors.text }]}>脂質 (g)</Text>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                脂質 (g)
+              </Text>
               <TextInput
                 style={[
                   styles.formInput,
                   {
                     color: colors.text,
-                    backgroundColor: '#f2f2f7',
-                    borderColor: '#e5e5ea',
+                    backgroundColor: "#f2f2f7",
+                    borderColor: "#e5e5ea",
                   },
                 ]}
                 keyboardType="numeric"
@@ -130,14 +154,16 @@ export default function ManualAddModal({
                 onChangeText={onFatChange}
               />
 
-              <Text style={[styles.formLabel, { color: colors.text }]}>炭水化物 (g)</Text>
+              <Text style={[styles.formLabel, { color: colors.text }]}>
+                炭水化物 (g)
+              </Text>
               <TextInput
                 style={[
                   styles.formInput,
                   {
                     color: colors.text,
-                    backgroundColor: '#f2f2f7',
-                    borderColor: '#e5e5ea',
+                    backgroundColor: "#f2f2f7",
+                    borderColor: "#e5e5ea",
                   },
                 ]}
                 keyboardType="numeric"
@@ -149,7 +175,8 @@ export default function ManualAddModal({
 
               <TouchableOpacity
                 style={[styles.formSubmitBtn, { backgroundColor: colors.tint }]}
-                onPress={onSubmit}>
+                onPress={onSubmit}
+              >
                 <Text style={styles.formSubmitBtnText}>登録する</Text>
               </TouchableOpacity>
             </View>
@@ -163,34 +190,34 @@ export default function ManualAddModal({
 const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalKeyboardContainer: {
-    width: '100%',
+    width: "100%",
   },
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    width: '100%',
+    width: "100%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalForm: {
     gap: 12,
   },
   formLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   formInput: {
     borderRadius: 12,
@@ -201,12 +228,12 @@ const styles = StyleSheet.create({
   formSubmitBtn: {
     borderRadius: 12,
     padding: 15,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   formSubmitBtnText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

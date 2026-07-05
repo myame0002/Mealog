@@ -164,7 +164,8 @@ export default function CalendarScreen() {
             </Text>
           </View>
           <Text style={[styles.mealTotal, { color: colors.icon }]}>
-            {items.reduce((sum, item) => sum + item.calories, 0)} kcal
+            {Math.round(items.reduce((sum, item) => sum + item.calories, 0))}{" "}
+            kcal
           </Text>
         </View>
 
@@ -178,11 +179,12 @@ export default function CalendarScreen() {
                 {item.name}
               </Text>
               <Text style={[styles.itemMeta, { color: colors.icon }]}>
-                P {item.protein}g / F {item.fat}g / C {item.carbs}g
+                P {Math.round(item.protein)}g / F {Math.round(item.fat)}g / C{" "}
+                {Math.round(item.carbs)}g
               </Text>
             </View>
             <Text style={[styles.itemCalories, { color: colors.tint }]}>
-              {item.calories} kcal
+              {Math.round(item.calories)} kcal
             </Text>
           </View>
         ))}
@@ -297,25 +299,25 @@ export default function CalendarScreen() {
                 <View style={styles.summaryBox}>
                   <Text style={styles.summaryLabel}>カロリー</Text>
                   <Text style={[styles.summaryValue, { color: colors.tint }]}>
-                    {totals.calories} kcal
+                    {Math.round(totals.calories)} kcal
                   </Text>
                 </View>
                 <View style={styles.summaryBox}>
                   <Text style={styles.summaryLabel}>たんぱく質</Text>
                   <Text style={[styles.summaryValue, { color: "#34C759" }]}>
-                    {totals.protein} g
+                    {Math.round(totals.protein)} g
                   </Text>
                 </View>
                 <View style={styles.summaryBox}>
                   <Text style={styles.summaryLabel}>脂質</Text>
                   <Text style={[styles.summaryValue, { color: "#AF52DE" }]}>
-                    {totals.fat} g
+                    {Math.round(totals.fat)} g
                   </Text>
                 </View>
                 <View style={styles.summaryBox}>
                   <Text style={styles.summaryLabel}>炭水化物</Text>
                   <Text style={[styles.summaryValue, { color: "#FF9500" }]}>
-                    {totals.carbs} g
+                    {Math.round(totals.carbs)} g
                   </Text>
                 </View>
               </View>

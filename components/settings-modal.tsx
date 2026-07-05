@@ -64,13 +64,18 @@ export default function SettingsModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View
         style={[styles.backdrop, { backgroundColor: "rgba(0, 0, 0, 0.5)" }]}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1, justifyContent: 'flex-end' }}
+          style={{ flex: 1, justifyContent: "flex-end" }}
           keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
           <View
@@ -93,9 +98,7 @@ export default function SettingsModal({
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-            >
+            <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={[styles.description, { color: colors.icon }]}>
                 1日の栄養素摂取目標を設定できます。
               </Text>
@@ -224,7 +227,7 @@ export default function SettingsModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   container: {
     borderTopLeftRadius: 24,

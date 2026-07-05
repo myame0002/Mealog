@@ -1,42 +1,42 @@
 import { BannerAdView } from "@/components/banner-ad";
+import BarcodeScannerModal from "@/components/barcode-scanner-modal";
 import CaloriesProgress from "@/components/calories-progress";
 import DateCarousel from "@/components/date-carousel";
 import ManualAddModal from "@/components/manual-add-modal";
 import MealSection from "@/components/meal-section";
 import RecipeAddModal from "@/components/recipe-add-modal";
 import SettingsModal from "@/components/settings-modal";
-import BarcodeScannerModal from "@/components/barcode-scanner-modal";
 import {
-    DailyTargets,
-    Ingredient,
-    LogItem,
-    Product,
-    Recipe,
-    calculateItemCalories,
-    calculateItemPFC,
-    getAllDayLogs,
-    getDailyTargets,
-    getDayLog,
-    getIngredients,
-    getProducts,
-    getRecipes,
-    initStorage,
-    saveDailyTargets,
-    saveDayLog,
+  DailyTargets,
+  Ingredient,
+  LogItem,
+  Product,
+  Recipe,
+  calculateItemCalories,
+  calculateItemPFC,
+  getAllDayLogs,
+  getDailyTargets,
+  getDayLog,
+  getIngredients,
+  getProducts,
+  getRecipes,
+  initStorage,
+  saveDailyTargets,
+  saveDayLog,
 } from "@/constants/storage";
 import { Colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    AppState,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  AppState,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -273,13 +273,13 @@ export default function HomeScreen() {
 
   const handleBarcodeScanned = async (barcode: string) => {
     setBarcodeScannerVisible(false);
-    
+
     // スキャンしたバーコードを商品名として使用
     setScannedProductName(barcode);
-    
+
     // 既存の商品を検索
     const existingProduct = products.find(
-      (p) => p.name.toLowerCase() === barcode.toLowerCase()
+      (p) => p.name.toLowerCase() === barcode.toLowerCase(),
     );
 
     if (existingProduct) {
@@ -661,7 +661,12 @@ export default function HomeScreen() {
       />
 
       {/* 🛒 Product Add Modal */}
-      <Modal visible={productModalVisible} transparent animationType="slide">
+      <Modal
+        visible={productModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setProductModalVisible(false)}
+      >
         <View style={styles.modalBackdrop}>
           <View
             style={[
@@ -995,9 +1000,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   barcodeScanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginHorizontal: 24,
     marginBottom: 16,
     padding: 14,
@@ -1005,8 +1010,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   barcodeScanButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

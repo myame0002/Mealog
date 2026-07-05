@@ -1,18 +1,17 @@
+import { Ingredient } from "@/constants/storage";
+import { Colors } from "@/constants/theme";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import {
-  View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Alert,
+  View
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Colors } from "@/constants/theme";
-import { Ingredient } from "@/constants/storage";
 
 interface IngredientModalProps {
   visible: boolean;
@@ -40,9 +39,13 @@ export function IngredientModal({
   onFormChange,
 }: IngredientModalProps) {
   const colors = Colors["light"];
-
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.modalBackdrop}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -51,9 +54,7 @@ export function IngredientModal({
           <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingIngredient
-                  ? "食材マスタの編集"
-                  : "新しい食材の登録"}
+                {editingIngredient ? "食材マスタの編集" : "新しい食材の登録"}
               </Text>
               <TouchableOpacity onPress={onClose}>
                 <Ionicons name="close" size={24} color={colors.icon} />
@@ -198,10 +199,7 @@ export function IngredientModal({
               </Text>
 
               <TouchableOpacity
-                style={[
-                  styles.formSubmitBtn,
-                  { backgroundColor: colors.tint },
-                ]}
+                style={[styles.formSubmitBtn, { backgroundColor: colors.tint }]}
                 onPress={onSave}
               >
                 <Text style={styles.formSubmitBtnText}>保存する</Text>
