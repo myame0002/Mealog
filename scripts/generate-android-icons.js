@@ -12,8 +12,8 @@ async function main() {
 
   // Android Adaptive Icon のセーフゾーンは中央66%
   // 画像全体を表示するには、元の画像をキャンバスの約66%の領域に収める必要がある
-  // つまり、キャンバスサイズ = 元画像サイズ / 0.66 ≈ 元画像サイズ × 1.5
-  const scaleFactor = 1.5;
+  // スケールファクターを1.3に調整して、アイコンを少し小さく表示
+  const scaleFactor = 1.3;
   const newSize = Math.round(size * scaleFactor);
   const offset = Math.round((newSize - size) / 2);
 
