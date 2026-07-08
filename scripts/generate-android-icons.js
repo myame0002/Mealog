@@ -11,9 +11,8 @@ async function main() {
   const size = metadata.width;
 
   // Android Adaptive Icon のセーフゾーンは中央66%
-  // 画像全体を表示するには、元の画像をキャンバスの約66%の領域に収める必要がある
-  // スケールファクターを1.3に調整して、アイコンを少し小さく表示
-  const scaleFactor = 1.3;
+  // 画像全体をセーフゾーンに収めるには 1/0.66 ≈ 1.52 のスケールが必要
+  const scaleFactor = 1.52;
   const newSize = Math.round(size * scaleFactor);
   const offset = Math.round((newSize - size) / 2);
 

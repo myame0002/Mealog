@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アイコンスケールプレビュー</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    margin: 0;
+    min-height: 100vh;
+  }
+  h1 { margin-bottom: 0.25rem; }
+  .sub { color: #aaa; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .canvas-wrap {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  canvas {
+    display: block;
+    max-width: 360px;
+    max-height: 360px;
+    width: 100%;
+    height: auto;
+    image-rendering: auto;
+    border-radius: 8px;
+  }
+  .controls {
+    background: #16213e;
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    min-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .control-group {
+    margin-bottom: 1.25rem;
+  }
+  label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  label span.val { color: #7ec8e3; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #7ec8e3;
+  }
+  .info {
+    background: #0f3460;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-top: 1rem;
+  }
+  .info span { color: #7ec8e3; }
+  .badge {
+    display: inline-block;
+    background: #e94560;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-item .swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .file-input-wrap {
+    margin-bottom: 1rem;
+  }
+  .file-input-wrap input {
+    color: #eee;
+    font-size: 0.85rem;
+    max-width: 100%;
+  }
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .presets button {
+    background: #0f3460;
+    color: #eee;
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: 0.15s;
+  }
+  .presets button:hover { background: #1a4a7a; }
+  .presets button.active { border-color: #7ec8e3; background: #1a5a8a; }
+  hr { border: none; border-top: 1px solid #333; margin: 1rem 0; }
+</style>
+</head>
+<body>
+<h1>🔍 アイコンスケールプレビュー</h1>
+<p class="sub">Android Adaptive Icon のセーフゾーンと表示範囲を確認</p>
+
+<div class="container">
+  <div class="canvas-wrap">
+    <canvas id="preview" width="400" height="400"></canvas>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="border:2px solid rgba(0,255,0,0.8);background:transparent"></span> セーフゾーン（中央66%）</div>
+      <div class="legend-item"><span class="swatch" style="background:rgba(255,0,0,0.25);border:1px dashed rgba(255,0,0,0.7)"></span> 実際の表示範囲（scaleFactor適用後）</div>
+      <div class="legend-item"><span class="swatch" style="background:rgba(255,165,0,0.2);border:2px solid rgba(255,165,0,0.7)"></span> 元画像の境界</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="file-input-wrap">
+      <label>アイコン画像</label>
+      <input type="file" id="fileInput" accept="image/png,image/webp,image/jpeg">
+    </div>
+
+    <div class="control-group">
+      <label>Scale Factor <span class="val" id="scaleVal">1.30</span></label>
+      <input type="range" id="scaleSlider" min="1.00" max="2.00" step="0.01" value="1.30">
+      <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin-top:2px;">
+        <span>小 (1.0)</span>
+        <span>大 (2.0)</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>キャンバス表示倍率 <span class="val" id="zoomVal">1.0x</span></label>
+      <input type="range" id="zoomSlider" min="0.5" max="2.5" step="0.1" value="1.0">
+    </div>
+
+    <div class="presets">
+      <button data-scale="1.10">1.10</button>
+      <button data-scale="1.20">1.20</button>
+      <button data-scale="1.30" class="active">1.30</button>
+      <button data-scale="1.50">1.50</button>
+      <button data-scale="1.70">1.70</button>
+    </div>
+
+    <div class="info" id="info">
+      画像サイズ: <span id="imgSize">-</span><br>
+      キャンバス: <span id="canvasSize">-</span><br>
+      セーフゾーン: <span id="safeZone">-</span><br>
+      オフセット: <span id="offset">-</span> px<br>
+      セーフゾーン占有率: <span id="occupancy">-</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('preview');
+const ctx = canvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+const scaleSlider = document.getElementById('scaleSlider');
+const zoomSlider = document.getElementById('zoomSlider');
+const scaleVal = document.getElementById('scaleVal');
+const zoomVal = document.getElementById('zoomVal');
+
+const imgSizeEl = document.getElementById('imgSize');
+const canvasSizeEl = document.getElementById('canvasSize');
+const safeZoneEl = document.getElementById('safeZone');
+const offsetEl = document.getElementById('offset');
+const occupancyEl = document.getElementById('occupancy');
+
+let sourceImage = null;
+let imageLoaded = false;
+
+// デフォルト画像の読み込み
+function loadDefaultImage() {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  // デフォルトでは元画像を直接読み込む（代わりに既存のforeground画像があればそちらを）
+  // assets/images/MeaLog_icon.png を相対パスで読み込み試行
+  const paths = [
+    './assets/images/MeaLog_icon.png',
+    './assets/images/android-icon-foreground.png',
+  ];
+  tryLoad(paths, 0, img);
+}
+
+function tryLoad(paths, idx, img) {
+  if (idx >= paths.length) return;
+  img.onload = () => {
+    sourceImage = img;
+    imageLoaded = true;
+    draw();
+  };
+  img.onerror = () => tryLoad(paths, idx + 1, img);
+  img.src = paths[idx];
+}
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      sourceImage = img;
+      imageLoaded = true;
+      draw();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+scaleSlider.addEventListener('input', () => {
+  scaleVal.textContent = parseFloat(scaleSlider.value).toFixed(2);
+  document.querySelectorAll('.presets button').forEach(b => {
+    b.classList.toggle('active', Math.abs(parseFloat(b.dataset.scale) - parseFloat(scaleSlider.value)) < 0.005);
+  });
+  draw();
+});
+
+zoomSlider.addEventListener('input', () => {
+  zoomVal.textContent = parseFloat(zoomSlider.value).toFixed(1) + 'x';
+  draw();
+});
+
+document.querySelectorAll('.presets button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    scaleSlider.value = btn.dataset.scale;
+    scaleVal.textContent = btn.dataset.scale;
+    document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    draw();
+  });
+});
+
+function draw() {
+  if (!imageLoaded || !sourceImage) {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#666';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('画像を選択してください', canvas.width/2, canvas.height/2);
+    return;
+  }
+
+  const scaleFactor = parseFloat(scaleSlider.value);
+  const zoom = parseFloat(zoomSlider.value);
+  const W = canvas.width;
+  const H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 元の画像サイズ
+  const imgW = sourceImage.width;
+  const imgH = sourceImage.height;
+  const size = Math.min(imgW, imgH);
+
+  // 拡大キャンバスサイズ
+  const newSize = size * scaleFactor;
+
+  // キャンバスに収める描画スケール
+  const padding = 10;
+  const drawable = Math.min(W, H) - padding * 2;
+  const displayScale = (drawable / newSize) * zoom;
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // 背景（ダーク）
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // グリッド
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 20; i++) {
+    const x = (i / 20) * W;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    const y = (i / 20) * H;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(displayScale, displayScale);
+  ctx.translate(-newSize/2, -newSize/2);
+
+  // 背景色（#E6F4FE）
+  ctx.fillStyle = '#E6F4FE';
+  ctx.fillRect(0, 0, newSize, newSize);
+
+  // セーフゾーン（中央66%）のガイド
+  const safeMargin = newSize * 0.17; // (100%-66%)/2 = 17%
+  ctx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+  ctx.lineWidth = 2 / displayScale;
+  ctx.setLineDash([6 / displayScale, 4 / displayScale]);
+  ctx.strokeRect(safeMargin, safeMargin, newSize - safeMargin*2, newSize - safeMargin*2);
+  ctx.setLineDash([]);
+
+  // セーフゾーン内緑の薄いオーバーレイ
+  ctx.fillStyle = 'rgba(0, 255, 0, 0.04)';
+  ctx.fillRect(safeMargin, safeMargin, newSize - safeMargin*2, newSize - safeMargin*2);
+
+  // 元の画像の境界（オレンジ）
+  const offset = (newSize - size) / 2;
+  ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)';
+  ctx.lineWidth = 2 / displayScale;
+  ctx.strokeRect(offset, offset, size, size);
+
+  // 実際の表示範囲（赤の点線）- 端が切れる範囲を示す
+  // アダプティブアイコンとして表示される際のセーフゾーンに対するカバレッジ
+  // scaleFactor によって元画像がどれだけ縮小されて表示されるか
+  const displayMargin = (newSize * 0.17) - offset; // セーフゾーンの内側から画像端までの距離
+  if (displayMargin > 0) {
+    // 画像がセーフゾーンより小さい場合 → セーフゾーンを基準に赤枠
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.lineWidth = 1.5 / displayScale;
+    ctx.setLineDash([5 / displayScale, 5 / displayScale]);
+    ctx.strokeRect(safeMargin, safeMargin, newSize - safeMargin*2, newSize - safeMargin*2);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.06)';
+    ctx.fillRect(safeMargin, safeMargin, newSize - safeMargin*2, newSize - safeMargin*2);
+  } else {
+    // 画像がセーフゾーンより大きい場合 → 画像の端のうちセーフゾーンからはみ出す部分を赤で示す
+    const overSafe = Math.abs(displayMargin);
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+    // 上下左右のあふれ
+    ctx.fillRect(offset, offset, size, overSafe); // top
+    ctx.fillRect(offset, offset + size - overSafe, size, overSafe); // bottom
+    ctx.fillRect(offset, offset + overSafe, overSafe, size - overSafe*2); // left
+    ctx.fillRect(offset + size - overSafe, offset + overSafe, overSafe, size - overSafe*2); // right
+  }
+
+  // 元の画像を描画
+  // 画像を中央に配置
+  const drawOffset = offset;
+  ctx.drawImage(sourceImage, drawOffset, drawOffset, size, size);
+
+  // コーナーにサイズ情報
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  const fontSize = Math.max(10, 12 / displayScale);
+  ctx.font = `bold ${fontSize}px monospace`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${Math.round(size)}×${Math.round(size)}`, 4 / displayScale, 4 / displayScale);
+
+  ctx.textBaseline = 'bottom';
+  ctx.textAlign = 'right';
+  ctx.fillText(`sf:${scaleFactor.toFixed(2)}`, newSize - 4 / displayScale, newSize - 4 / displayScale);
+
+  ctx.restore();
+
+  // Info更新
+  const safeDiameter = (newSize * 0.66);
+  const imgFitsPercent = ((size / (newSize * 0.66)) * 100);
+  imgSizeEl.textContent = `${Math.round(size)}×${Math.round(size)} px`;
+  canvasSizeEl.textContent = `${Math.round(newSize)}×${Math.round(newSize)} px`;
+  safeZoneEl.textContent = `${Math.round(safeDiameter)}×${Math.round(safeDiameter)} px (66%)`;
+  offsetEl.textContent = Math.round(offset);
+  occupancyEl.textContent = imgFitsPercent < 100
+    ? `${imgFitsPercent.toFixed(1)}% 🔵 余裕あり`
+    : `${imgFitsPercent.toFixed(1)}% ⚠️ はみ出し`;
+}
+
+// 初期表示
+loadDefaultImage();
+window.addEventListener('resize', draw);
+</script>
+</body>
+</html>
