@@ -31,6 +31,7 @@ type MealSectionProps = {
   onOpenManualModal: () => void;
   onOpenRecipeModal: () => void;
   onOpenProductModal: () => void;
+  onCopyPrevious: () => void;
 };
 
 export default function MealSection({
@@ -54,6 +55,7 @@ export default function MealSection({
   onOpenManualModal,
   onOpenRecipeModal,
   onOpenProductModal,
+  onCopyPrevious,
 }: MealSectionProps) {
   return (
     <View style={[styles.mealSectionCard, { backgroundColor: '#ffffff', borderColor: '#e5e5ea' }]}>
@@ -63,7 +65,15 @@ export default function MealSection({
           <Ionicons name={meal.icon as any} size={20} color={meal.color} style={styles.mealIcon} />
           <Text style={[styles.mealTitleText, { color: colors.text }]}>{meal.label}</Text>
         </View>
-        <Text style={[styles.mealSumText, { color: colors.text }]}>{mealSum} kcal</Text>
+        <View style={styles.mealHeaderRight}>
+          <TouchableOpacity
+            style={styles.copyPreviousBtn}
+            onPress={onCopyPrevious}>
+            <Ionicons name="copy-outline" size={13} color={colors.tint} />
+            <Text style={[styles.copyPreviousText, { color: colors.tint }]}>前回のコピー</Text>
+          </TouchableOpacity>
+          <Text style={[styles.mealSumText, { color: colors.text }]}>{mealSum} kcal</Text>
+        </View>
       </View>
 
       {/* Items List */}
@@ -407,6 +417,24 @@ const styles = StyleSheet.create({
   mealTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  mealHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  copyPreviousBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#f2f2f7',
+  },
+  copyPreviousText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   mealIcon: {
     marginRight: 8,

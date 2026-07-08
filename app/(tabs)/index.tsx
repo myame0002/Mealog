@@ -1,5 +1,4 @@
 import { BannerAdView } from "@/components/banner-ad";
-import BarcodeScannerModal from "@/components/barcode-scanner-modal";
 import CaloriesProgress from "@/components/calories-progress";
 import DateCarousel from "@/components/date-carousel";
 import ManualAddModal from "@/components/manual-add-modal";
@@ -18,6 +17,7 @@ import {
   getDailyTargets,
   getDayLog,
   getIngredients,
+  getPreviousMealLogs,
   getProducts,
   getRecipes,
   initStorage,
@@ -67,7 +67,6 @@ export default function HomeScreen() {
   const [recipeModalVisible, setRecipeModalVisible] = useState(false);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
-  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
   const [activeMealType, setActiveMealType] =
     useState<LogItem["mealType"]>("breakfast");
 
@@ -80,9 +79,6 @@ export default function HomeScreen() {
 
   // Search state for Recipe Modal
   const [recipeSearchQuery, setRecipeSearchQuery] = useState("");
-
-  // Barcode scanned product name
-  const [scannedProductName, setScannedProductName] = useState("");
 
   // Add ingredient to recipe states
   const [showAddIngToRecipe, setShowAddIngToRecipe] = useState<string | null>(
@@ -266,32 +262,6 @@ export default function HomeScreen() {
     setProductModalVisible(true);
   };
 
-  const handleOpenBarcodeScanner = () => {
-    setActiveMealType(activeMealType);
-    setBarcodeScannerVisible(true);
-  };
-
-  const handleBarcodeScanned = async (barcode: string) => {
-    setBarcodeScannerVisible(false);
-
-    // スキャンしたバーコードを商品名として使用
-    setScannedProductName(barcode);
-
-    // 既存の商品を検索
-    const existingProduct = products.find(
-      (p) => p.name.toLowerCase() === barcode.toLowerCase(),
-    );
-
-    if (existingProduct) {
-      // 既存商品が見つかった場合、直接追加
-      await handleAddProductFood(existingProduct);
-      setScannedProductName("");
-    } else {
-      // 新規商品の場合、市販品モーダルを開いて手動登録
-      setProductModalVisible(true);
-    }
-  };
-
   const handleAddRecipeFood = async (recipe: Recipe) => {
     // Generate snapshot list of ingredients with their current master calorie values
     const logIngredients = recipe.ingredients.map((recIng) => {
@@ -447,6 +417,28 @@ export default function HomeScreen() {
     ]);
   };
 
+  const handleCopyPreviousMeal = async (mealType: LogItem["mealType"]) => {
+    const result = await getPreviousMealLogs(selectedDate, mealType);
+    if (!result) {
+      Alert.alert("コピーできません", "前回のログが見つかりませんでした。");
+      return;
+    }
+
+    // 新しいIDを生成して現在の日にコピー
+    const newItems: LogItem[] = result.items.map((item) => ({
+      ...item,
+      id: `${item.type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    }));
+
+    const updatedLogs = [...logs, ...newItems];
+    setLogs(updatedLogs);
+    await saveDayLog(selectedDate, updatedLogs);
+    Alert.alert(
+      "コピー完了",
+      `${result.date} の${MEAL_TYPES.find((m) => m.key === mealType)?.label}をコピーしました。`,
+    );
+  };
+
   const handleAddIngredientToLog = async (logItemId: string) => {
     if (!selectedIngForRecipe || !recipeIngAmount.trim()) {
       Alert.alert("入力エラー", "材料と量を入力してください。");
@@ -595,7 +587,9 @@ export default function HomeScreen() {
               recipeIngAmount={recipeIngAmount}
               ingredients={ingredients}
               colors={colors}
-              onToggleExpand={setExpandedLogId}
+              onToggleExpand={(itemId) => {
+                setExpandedLogId((prev) => (prev === itemId ? null : itemId));
+              }}
               onDeleteLogItem={handleDeleteLogItem}
               onUpdateIngredientWeight={handleUpdateIngredientWeight}
               onDeleteIngredientFromLog={handleDeleteIngredientFromLog}
@@ -615,6 +609,7 @@ export default function HomeScreen() {
                 setActiveMealType(meal.key);
                 handleOpenProductModal();
               }}
+              onCopyPrevious={() => handleCopyPreviousMeal(meal.key)}
             />
           );
         })}
@@ -694,14 +689,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* 📷 Barcode Scanner Modal */}
-      <BarcodeScannerModal
-        visible={barcodeScannerVisible}
-        colors={colors}
-        onClose={() => setBarcodeScannerVisible(false)}
-        onBarcodeScanned={handleBarcodeScanned}
-      />
     </View>
   );
 }

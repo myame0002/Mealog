@@ -93,10 +93,12 @@ export default function ExploreScreen() {
     setLoading(false);
   };
 
-  // Filter recipes based on search query
-  const filteredRecipes = recipes.filter((recipe) =>
-    recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter recipes based on search query (新しい登録順 = reverse)
+  const filteredRecipes = recipes
+    .filter((recipe) =>
+      recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .reverse();
 
   // Filter ingredients based on search query
   const filteredIngredients = ingredients.filter((ingredient) =>
@@ -255,7 +257,7 @@ export default function ExploreScreen() {
     };
 
     setRecSelectedIngs([...recSelectedIngs, newItem]);
-    setIsSelectingIng(false);
+    // キャンセルを押すまで材料選択を閉じない
   };
 
   const handleRemoveIngFromRecipe = (ingId: string) => {
@@ -387,6 +389,30 @@ export default function ExploreScreen() {
         <Ionicons name="refresh" size={20} color={colors.tint} />
       </TouchableOpacity>
 
+      {/* Segmented Tab Controller */}
+      <TabController
+        activeTab={activeTab}
+        recipesCount={recipes.length}
+        ingredientsCount={ingredients.length}
+        onTabChange={setActiveTab}
+      />
+
+      {/* Add Button */}
+      <View style={styles.addButtonContainer}>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: colors.tint }]}
+          onPress={
+            activeTab === "recipes" ? handleOpenAddRecipe : handleOpenAddIng
+          }>
+          <Ionicons name="add-circle-outline" size={20} color="#fff" />
+          <Text style={styles.addBtnText}>
+            {activeTab === "recipes"
+              ? "新しいレシピを作成"
+              : "新しい食材を追加"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={[styles.searchBar, { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
@@ -410,30 +436,6 @@ export default function ExploreScreen() {
             </TouchableOpacity>
           )}
         </View>
-      </View>
-
-      {/* Segmented Tab Controller */}
-      <TabController
-        activeTab={activeTab}
-        recipesCount={recipes.length}
-        ingredientsCount={ingredients.length}
-        onTabChange={setActiveTab}
-      />
-
-      {/* Add Button - Fixed at top, not scrolling */}
-      <View style={styles.addButtonContainer}>
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: colors.tint }]}
-          onPress={
-            activeTab === "recipes" ? handleOpenAddRecipe : handleOpenAddIng
-          }>
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={styles.addBtnText}>
-            {activeTab === "recipes"
-              ? "新しいレシピを作成"
-              : "新しい食材を追加"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Main List */}

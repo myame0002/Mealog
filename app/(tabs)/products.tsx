@@ -1,4 +1,3 @@
-import BarcodeScannerModal from "@/components/barcode-scanner-modal";
 import {
   deleteProduct,
   getProducts,
@@ -31,7 +30,6 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
-  const [barcodeScannerVisible, setBarcodeScannerVisible] = useState(false);
 
   // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -212,98 +210,16 @@ export default function ProductsScreen() {
     ]);
   };
 
-  // --- BARCODE SCANNER ---
-
-  const handleOpenBarcodeScanner = () => {
-    setBarcodeScannerVisible(true);
-  };
-
-  const handleBarcodeScanned = async (barcode: string) => {
-    setBarcodeScannerVisible(false);
-
-    // Open Food Factsから商品情報を取得
-    Alert.alert("検索中", "商品情報を取得しています...");
-
-    try {
-      const { searchProductByBarcode } = await import("@/utils/openfoodfacts");
-      const productInfo = await searchProductByBarcode(barcode);
-
-      if (productInfo && productInfo.name !== barcode) {
-        // 商品情報が取得できた場合、フォームに設定
-        setEditingId(null);
-        setFormName(productInfo.name);
-        setFormBrand(productInfo.brand || "");
-        setFormCalories(String(productInfo.caloriesPerServing));
-        setFormProtein(String(productInfo.proteinPerServing));
-        setFormFat(String(productInfo.fatPerServing));
-        setFormCarbs(String(productInfo.carbsPerServing));
-        setFormServing(productInfo.servingSize);
-
-        // 注意書き付きのアラートを表示
-        Alert.alert(
-          "商品情報を取得しました",
-          `商品名: ${productInfo.name}\nカロリー: ${productInfo.caloriesPerServing}kcal\n\n※ この情報はユーザー投稿型データベースのため、正確性は保証されていません。\n※ 表示されている栄養成分は1食分の値ではない場合があります。\n\n内容を確認して「OK」を押すと、登録画面が開きます。`,
-          [{ text: "OK", onPress: () => setModalVisible(true) }],
-        );
-      } else {
-        // 商品情報が見つからなかった場合
-        Alert.alert(
-          "商品情報が見つかりませんでした",
-          "このバーコードの商品情報は登録されていません。\n\n手動で商品を登録してください。",
-          [
-            { text: "キャンセル", style: "cancel" },
-            {
-              text: "手動で登録",
-              onPress: () => {
-                // バーコードを商品名にして手動登録モーダルを開く
-                setEditingId(null);
-                setFormName(barcode);
-                setFormBrand("");
-                setFormCalories("");
-                setFormServing("");
-                setFormProtein("");
-                setFormFat("");
-                setFormCarbs("");
-                setModalVisible(true);
-              },
-            },
-          ],
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      Alert.alert(
-        "エラー",
-        "商品情報の取得に失敗しました。\n\n手動で商品を登録してください。",
-        [
-          { text: "キャンセル", style: "cancel" },
-          {
-            text: "手動で登録",
-            onPress: () => {
-              // バーコードを商品名にして手動登録モーダルを開く
-              setEditingId(null);
-              setFormName(barcode);
-              setFormBrand("");
-              setFormCalories("");
-              setFormServing("");
-              setFormProtein("");
-              setFormFat("");
-              setFormCarbs("");
-              setModalVisible(true);
-            },
-          },
-        ],
+  // 新しい登録順（配列の後ろが最新）で表示するため reverse
+  const filteredProducts = products
+    .filter((p) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.brand ?? "").toLowerCase().includes(q)
       );
-    }
-  };
-
-  const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.brand ?? "").toLowerCase().includes(q)
-    );
-  });
+    })
+    .reverse();
 
   if (loading) {
     return (
@@ -330,20 +246,12 @@ export default function ProductsScreen() {
             コンビニ・スーパーの商品カロリー帳
           </Text>
         </View>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.addHeaderBtn, { backgroundColor: "#34C759" }]}
-            onPress={handleOpenBarcodeScanner}
-          >
-            <Ionicons name="barcode-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.addHeaderBtn, { backgroundColor: colors.tint }]}
-            onPress={handleOpenAdd}
-          >
-            <Ionicons name="add" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.addHeaderBtn, { backgroundColor: colors.tint }]}
+          onPress={handleOpenAdd}
+        >
+          <Ionicons name="add" size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -467,14 +375,6 @@ export default function ProductsScreen() {
         )}
         <View style={{ height: 30 }} />
       </ScrollView>
-
-      {/* 📷 Barcode Scanner Modal */}
-      <BarcodeScannerModal
-        visible={barcodeScannerVisible}
-        colors={colors}
-        onClose={() => setBarcodeScannerVisible(false)}
-        onBarcodeScanned={handleBarcodeScanned}
-      />
 
       {/* Add/Edit Modal */}
       <Modal
@@ -623,10 +523,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginTop: 2,
-  },
-  headerButtons: {
-    flexDirection: "row",
-    gap: 8,
   },
   addHeaderBtn: {
     width: 38,

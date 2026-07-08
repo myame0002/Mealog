@@ -3,6 +3,7 @@ import { Colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
 import {
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -64,12 +65,29 @@ export function RecipeBuilderModal({
   const colors = Colors["light"];
   const [ingredientSearchQuery, setIngredientSearchQuery] = useState("");
 
+  const hasContent = recipeName.trim().length > 0 || selectedIngredients.length > 0;
+
+  const handleClose = () => {
+    if (hasContent) {
+      Alert.alert(
+        "レシピ編集を閉じる",
+        "入力した内容は保存されません。閉じてもよろしいですか？",
+        [
+          { text: "キャンセル", style: "cancel" },
+          { text: "閉じる", style: "destructive", onPress: onClose },
+        ],
+      );
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.modalBackdrop}>
         <View
@@ -83,7 +101,7 @@ export function RecipeBuilderModal({
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               {editingRecipe ? "レシピの編集" : "新しいレシピを作成"}
             </Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>

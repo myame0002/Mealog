@@ -712,6 +712,35 @@ export const saveDayLog = async (
   }
 };
 
+// --- PREVIOUS MEAL LOGS API ---
+
+/**
+ * 指定された日付から1日ずつ遡り、指定された食事区分のログがある最初の日を探す
+ */
+export const getPreviousMealLogs = async (
+  currentDate: string,
+  mealType: LogItem["mealType"],
+): Promise<{ date: string; items: LogItem[] } | null> => {
+  try {
+    const current = new Date(currentDate + "T00:00:00");
+    // 最大30日前まで検索
+    for (let i = 1; i <= 30; i++) {
+      const prev = new Date(current);
+      prev.setDate(prev.getDate() - i);
+      const prevDateStr = prev.toISOString().split("T")[0];
+      const dayLogs = await getDayLog(prevDateStr);
+      const mealItems = dayLogs.filter((item) => item.mealType === mealType);
+      if (mealItems.length > 0) {
+        return { date: prevDateStr, items: mealItems };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("getPreviousMealLogs error:", error);
+    return null;
+  }
+};
+
 // --- DAILY TARGETS API ---
 
 export interface DailyTargets {
