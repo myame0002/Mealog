@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MEAL_TYPES = [
   { key: "breakfast", label: "朝食" },
@@ -55,6 +56,7 @@ export default function ManualAddModal({
 }: ManualAddModalProps) {
   const mealLabel =
     MEAL_TYPES.find((m) => m.key === activeMealType)?.label || "食事";
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal
@@ -68,7 +70,12 @@ export default function ManualAddModal({
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalKeyboardContainer}
         >
-          <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: "#fff", paddingBottom: Math.max(insets.bottom, 20) },
+            ]}
+          >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {mealLabel} - 食事の手動入力

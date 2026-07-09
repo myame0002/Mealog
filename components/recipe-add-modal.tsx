@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MEAL_TYPES = [
   { key: "breakfast", label: "朝食" },
@@ -48,6 +49,7 @@ export default function RecipeAddModal({
 }: RecipeAddModalProps) {
   const mealLabel =
     MEAL_TYPES.find((m) => m.key === activeMealType)?.label || "食事";
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal
@@ -61,7 +63,7 @@ export default function RecipeAddModal({
           style={[
             styles.modalContent,
             styles.recipeModalContent,
-            { backgroundColor: "#fff" },
+            { backgroundColor: "#fff", paddingBottom: Math.max(insets.bottom, 20) },
           ]}
         >
           <View style={styles.modalHeader}>
@@ -107,9 +109,16 @@ export default function RecipeAddModal({
             showsVerticalScrollIndicator={false}
           >
             {(() => {
-              const filteredRecipes = recipes.filter((r) =>
-                r.name.toLowerCase().includes(recipeSearchQuery.toLowerCase()),
-              );
+              const filteredRecipes = recipes
+                .filter((r) =>
+                  r.name.toLowerCase().includes(recipeSearchQuery.toLowerCase()),
+                )
+                .sort((a, b) => {
+                  // ID形式: rec_${timestamp} のタイムスタンプ部分を抽出して降順（新しい順）
+                  const aTime = parseInt(a.id.replace("rec_", ""), 10);
+                  const bTime = parseInt(b.id.replace("rec_", ""), 10);
+                  return bTime - aTime;
+                });
 
               if (filteredRecipes.length === 0) {
                 return (

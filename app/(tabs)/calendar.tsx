@@ -6,7 +6,7 @@ import {
 } from "@/constants/storage";
 import { Colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 
 const MEAL_TYPES = [
   { key: "breakfast", label: "朝食", color: "#FF9500" },
@@ -60,6 +61,22 @@ export default function CalendarScreen() {
 
     load();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const load = async () => {
+        const [allLogs, dailyTargets] = await Promise.all([
+          getAllDayLogs(),
+          getDailyTargets(),
+        ]);
+
+        setLogs(allLogs);
+        setTargets(dailyTargets);
+      };
+
+      load();
+    }, [setLogs, setTargets])
+  );
 
   const logMap = useMemo(
     () => new Map(logs.map((entry) => [entry.date, entry])),

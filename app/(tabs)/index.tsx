@@ -231,6 +231,7 @@ export default function HomeScreen() {
     const updatedLogs = [...logs, newItem];
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
 
     // Reset inputs
     setManualName("");
@@ -253,6 +254,7 @@ export default function HomeScreen() {
     const updatedLogs = [...logs, newItem];
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
     setProductModalVisible(false);
   };
 
@@ -299,6 +301,7 @@ export default function HomeScreen() {
     const updatedLogs = [...logs, newItem];
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
     setRecipeModalVisible(false);
   };
 
@@ -312,6 +315,7 @@ export default function HomeScreen() {
     const updatedLogs = logs.filter((item) => item.id !== itemId);
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
     if (expandedLogId === itemId) {
       setExpandedLogId(null);
     }
@@ -433,6 +437,7 @@ export default function HomeScreen() {
     const updatedLogs = [...logs, ...newItems];
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
     Alert.alert(
       "コピー完了",
       `${result.date} の${MEAL_TYPES.find((m) => m.key === mealType)?.label}をコピーしました。`,
@@ -506,6 +511,7 @@ export default function HomeScreen() {
 
     setLogs(updatedLogs);
     await saveDayLog(selectedDate, updatedLogs);
+    await loadLoggedDates();
     setShowAddIngToRecipe(null);
     setSelectedIngForRecipe("");
     setRecipeIngAmount("");
@@ -707,13 +713,20 @@ const ProductSelector = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.brand ?? "").toLowerCase().includes(q)
-    );
-  });
+  const filteredProducts = products
+    .filter((p) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.brand ?? "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      // ID形式: prod_${timestamp} のタイムスタンプ部分を抽出して降順（新しい順）
+      const aTime = parseInt(a.id.replace("prod_", ""), 10);
+      const bTime = parseInt(b.id.replace("prod_", ""), 10);
+      return bTime - aTime;
+    });
 
   return (
     <View style={styles.productModalContent}>
@@ -883,6 +896,7 @@ const styles = StyleSheet.create({
   },
   productModalContent: {
     flex: 1,
+    maxHeight: "85%",
   },
   modalHeader: {
     flexDirection: "row",

@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface IngredientModalProps {
   visible: boolean;
@@ -39,6 +40,7 @@ export function IngredientModal({
   onFormChange,
 }: IngredientModalProps) {
   const colors = Colors["light"];
+  const insets = useSafeAreaInsets();
   return (
     <Modal
       visible={visible}
@@ -51,7 +53,12 @@ export function IngredientModal({
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalKeyboardContainer}
         >
-          <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: "#fff", paddingBottom: Math.max(insets.bottom, 40) },
+            ]}
+          >
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {editingIngredient ? "食材マスタの編集" : "新しい食材の登録"}
@@ -225,7 +232,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 40,
     width: "100%",
   },
   modalHeader: {

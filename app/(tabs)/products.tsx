@@ -388,7 +388,15 @@ export default function ProductsScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.modalKeyboardContainer}
           >
-            <View style={[styles.modalContent, { backgroundColor: "#fff" }]}>
+            <View
+              style={[
+                styles.modalContent,
+                {
+                  backgroundColor: "#fff",
+                  paddingBottom: Math.max(insets.bottom, 40),
+                },
+              ]}
+            >
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>
                   {editingId ? "市販品の編集" : "新しい市販品を登録"}

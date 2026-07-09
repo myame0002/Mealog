@@ -715,7 +715,8 @@ export const saveDayLog = async (
 // --- PREVIOUS MEAL LOGS API ---
 
 /**
- * 指定された日付から1日ずつ遡り、指定された食事区分のログがある最初の日を探す
+ * 指定された食事区分の直近のログを取得する
+ * 今日の日付より前の日付から、その食事区分が最後に記録された日のデータを返す
  */
 export const getPreviousMealLogs = async (
   currentDate: string,
@@ -723,17 +724,23 @@ export const getPreviousMealLogs = async (
 ): Promise<{ date: string; items: LogItem[] } | null> => {
   try {
     const current = new Date(currentDate + "T00:00:00");
-    // 最大30日前まで検索
-    for (let i = 1; i <= 30; i++) {
-      const prev = new Date(current);
-      prev.setDate(prev.getDate() - i);
-      const prevDateStr = prev.toISOString().split("T")[0];
-      const dayLogs = await getDayLog(prevDateStr);
-      const mealItems = dayLogs.filter((item) => item.mealType === mealType);
-      if (mealItems.length > 0) {
-        return { date: prevDateStr, items: mealItems };
-      }
+    const allLogs = await getAllDayLogs();
+    
+    // 現在の日付より前の日付で、指定された食事区分にログがある日を探す
+    // 日付の降順（新しい順）にソートして、最初に見つかったものを返す
+    const previousLogs = allLogs
+      .filter((log) => {
+        const logDate = new Date(log.date + "T00:00:00");
+        return logDate < current && log.items.some((item) => item.mealType === mealType);
+      })
+      .sort((a, b) => b.date.localeCompare(a.date)); // 新しい順にソート
+
+    if (previousLogs.length > 0) {
+      const mostRecent = previousLogs[0];
+      const mealItems = mostRecent.items.filter((item) => item.mealType === mealType);
+      return { date: mostRecent.date, items: mealItems };
     }
+
     return null;
   } catch (error) {
     console.error("getPreviousMealLogs error:", error);

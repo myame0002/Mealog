@@ -31,9 +31,13 @@ export default function DateCarousel({
   theme,
 }: DateCarouselProps) {
   const scrollRef = useRef<ScrollView | null>(null);
+  const hasScrolledToToday = useRef(false);
 
   // On mount, position 'today' approximately at the 3rd slot from the left
   useEffect(() => {
+    // Only scroll on initial mount
+    if (hasScrolledToToday.current) return;
+    
     // Find today's index in the provided days
     const todayIndex = calendarDays.findIndex((d) => d.isToday);
     if (todayIndex === -1 || !scrollRef.current) return;
@@ -48,13 +52,19 @@ export default function DateCarousel({
       0,
       itemSpacing * (todayIndex - desiredLeftSlot) - contentPadding,
     );
+    
+    hasScrolledToToday.current = true;
     // @ts-ignore - scrollTo exists on ScrollView ref
     scrollRef.current.scrollTo({ x, animated: true });
   }, [calendarDays]);
+  const setScrollRef = (ref: ScrollView | null) => {
+    scrollRef.current = ref;
+  };
+
   return (
     <View style={styles.calendarContainer}>
       <ScrollView
-        ref={(ref) => (scrollRef.current = ref)}
+        ref={setScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.calendarScroll}
