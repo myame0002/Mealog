@@ -173,7 +173,7 @@ export function IngredientModal({
               <View style={styles.pairRow}>
                 <View style={styles.pairField}>
                   <Text style={[styles.formLabel, { color: colors.text }]}>
-                    カロリー (基準量あたり/kcal)
+                    カロリー (kcal)
                   </Text>
                   <TextInput
                     style={[
@@ -184,7 +184,7 @@ export function IngredientModal({
                         borderColor: "#e5e5ea",
                       },
                     ]}
-                    placeholder="例: 156 (100gあたりの場合)"
+                    placeholder="例: 15 or 12*2.5"
                     placeholderTextColor={colors.icon}
                     value={formData.calories}
                     onChangeText={(text) => onFormChange("calories", text)}
@@ -192,7 +192,7 @@ export function IngredientModal({
                 </View>
                 <View style={styles.pairField}>
                   <Text style={[styles.formLabel, { color: colors.text }]}>
-                    たんぱく質 (基準量あたり/g)
+                    たんぱく質 (g)
                   </Text>
                   <TextInput
                     style={[
@@ -203,7 +203,7 @@ export function IngredientModal({
                         borderColor: "#e5e5ea",
                       },
                     ]}
-                    placeholder="例: 2.5 (100gあたりの場合)"
+                    placeholder="例: 2.5 or 12*2.5"
                     placeholderTextColor={colors.icon}
                     value={formData.protein}
                     onChangeText={(text) => onFormChange("protein", text)}
@@ -215,7 +215,7 @@ export function IngredientModal({
               <View style={styles.pairRow}>
                 <View style={styles.pairField}>
                   <Text style={[styles.formLabel, { color: colors.text }]}>
-                    脂質 (基準量あたり/g)
+                    脂質 (g)
                   </Text>
                   <TextInput
                     style={[
@@ -226,7 +226,7 @@ export function IngredientModal({
                         borderColor: "#e5e5ea",
                       },
                     ]}
-                    placeholder="例: 0.3 (100gあたりの場合)"
+                    placeholder="例: 0.3 or 12*2.5"
                     placeholderTextColor={colors.icon}
                     value={formData.fat}
                     onChangeText={(text) => onFormChange("fat", text)}
@@ -234,7 +234,7 @@ export function IngredientModal({
                 </View>
                 <View style={styles.pairField}>
                   <Text style={[styles.formLabel, { color: colors.text }]}>
-                    炭水化物 (基準量あたり/g)
+                    炭水化物 (g)
                   </Text>
                   <TextInput
                     style={[
@@ -245,7 +245,7 @@ export function IngredientModal({
                         borderColor: "#e5e5ea",
                       },
                     ]}
-                    placeholder="例: 37.1 (100gあたりの場合)"
+                    placeholder="例: 37.1 or 12*2.5"
                     placeholderTextColor={colors.icon}
                     value={formData.carbs}
                     onChangeText={(text) => onFormChange("carbs", text)}
