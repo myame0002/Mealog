@@ -2,16 +2,29 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // --- DATA TYPES ---
 
+export type Unit = "g" | "ml";
+
 export interface Ingredient {
   id: string;
   name: string;
-  caloriesPer100g: number;
-  proteinPer100g: number; // たんぱく質 (g/100g)
-  fatPer100g: number; // 脂質 (g/100g)
-  carbsPer100g: number; // 炭水化物 (g/100g)
+  caloriesPer100g: number; // baseAmount単位あたりのカロリー (例: baseAmount=10, baseUnit=g で 100 なら 10gあたり100kcal)
+  proteinPer100g: number; // baseAmount単位あたりのたんぱく質 (例: 10gあたり2.5g)
+  fatPer100g: number; // baseAmount単位あたりの脂質 (例: 10gあたり0.3g)
+  carbsPer100g: number; // baseAmount単位あたりの炭水化物 (例: 10gあたり37.1g)
+  baseAmount?: number; // 栄養価の基準量 (例: 10, 100)。未指定時は100
+  baseUnit?: Unit; // 栄養価の基準単位 ("g" または "ml")。未指定時は "g"
   servingSize?: string; // 例: "1本", "1個", "100g" (オプション)
   servingAmount?: number; // その分量のグラム数 (例: 150) (オプション)
 }
+
+// 基準単位を取得（未指定時は "g"）
+export const getUnit = (ing: Ingredient): Unit => ing.baseUnit ?? "g";
+// 基準量を取得（未指定時は 100）
+export const getBaseAmount = (ing: Ingredient): number => ing.baseAmount ?? 100;
+// 登録時の「per 基準量 基準単位」のカロリー表示値を算出
+// caloriesPer100g は baseAmount 単位あたりの値なので、そのまま表示
+export const getBasisCalories = (ing: Ingredient): number =>
+  Math.round(ing.caloriesPer100g);
 
 export interface RecipeIngredient {
   ingredientId: string;
@@ -27,11 +40,13 @@ export interface Recipe {
 export interface LoggedIngredient {
   ingredientId: string;
   name: string;
-  amount: number; // in grams, editable!
+  amount: number; // in [baseUnit], editable!
   caloriesPer100g: number; // snapshot to prevent historical shifts if master changes
   proteinPer100g: number; // snapshot
   fatPer100g: number; // snapshot
   carbsPer100g: number; // snapshot
+  baseAmount: number; // snapshot of the ingredient's baseAmount at log time
+  baseUnit?: Unit; // snapshot of the ingredient's unit at log time
 }
 
 export interface LogItem {
@@ -84,6 +99,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.7,
     fatPer100g: 0.1,
     carbsPer100g: 8.7,
+    baseAmount: 100,
     servingSize: "1本(中)",
     servingAmount: 100,
   },
@@ -94,6 +110,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 1.5,
     fatPer100g: 0.1,
     carbsPer100g: 17.3,
+    baseAmount: 100,
     servingSize: "1個(中)",
     servingAmount: 150,
   },
@@ -104,6 +121,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 1.0,
     fatPer100g: 0.1,
     carbsPer100g: 8.4,
+    baseAmount: 100,
     servingSize: "1個(中)",
     servingAmount: 150,
   },
@@ -114,6 +132,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 12.2,
     fatPer100g: 10.2,
     carbsPer100g: 0.4,
+    baseAmount: 100,
     servingSize: "1個(中玉)",
     servingAmount: 50,
   },
@@ -124,6 +143,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 1.3,
     fatPer100g: 0.1,
     carbsPer100g: 4.9,
+    baseAmount: 100,
     servingSize: "1/4個",
     servingAmount: 200,
   },
@@ -134,6 +154,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 2.5,
     fatPer100g: 0.3,
     carbsPer100g: 37.1,
+    baseAmount: 100,
     servingSize: "1膳",
     servingAmount: 150,
   },
@@ -144,6 +165,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 16.6,
     fatPer100g: 14.2,
     carbsPer100g: 0.0,
+    baseAmount: 100,
     servingSize: "1枚",
     servingAmount: 200,
   },
@@ -154,6 +176,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.0,
     fatPer100g: 0.0,
     carbsPer100g: 0.0,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 6,
   },
@@ -164,6 +187,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 11.1,
     fatPer100g: 4.9,
     carbsPer100g: 66.4,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 2,
   },
@@ -174,6 +198,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.0,
     fatPer100g: 0.0,
     carbsPer100g: 99.3,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 10,
   },
@@ -184,6 +209,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.7,
     fatPer100g: 0.1,
     carbsPer100g: 30.1,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -194,6 +220,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 1.7,
     fatPer100g: 0.2,
     carbsPer100g: 25.8,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -204,6 +231,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 1.3,
     fatPer100g: 72.3,
     carbsPer100g: 2.0,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -214,6 +242,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 45.8,
     fatPer100g: 0.0,
     carbsPer100g: 26.1,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 3,
   },
@@ -224,6 +253,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 9.0,
     fatPer100g: 1.2,
     carbsPer100g: 41.8,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 3,
   },
@@ -234,6 +264,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 11.0,
     fatPer100g: 0.6,
     carbsPer100g: 36.0,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 3,
   },
@@ -244,6 +275,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 8.9,
     fatPer100g: 1.0,
     carbsPer100g: 37.0,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 3,
   },
@@ -254,6 +286,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 4.1,
     fatPer100g: 0.0,
     carbsPer100g: 23.3,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -264,6 +297,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 3.1,
     fatPer100g: 0.0,
     carbsPer100g: 8.5,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -274,6 +308,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 7.7,
     fatPer100g: 0.0,
     carbsPer100g: 10.1,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -284,6 +319,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 11.6,
     fatPer100g: 4.2,
     carbsPer100g: 24.3,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 18,
   },
@@ -294,6 +330,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 5.3,
     fatPer100g: 0.1,
     carbsPer100g: 28.7,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -304,6 +341,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 4.8,
     fatPer100g: 1.8,
     carbsPer100g: 52.8,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -314,6 +352,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 6.5,
     fatPer100g: 6.0,
     carbsPer100g: 43.8,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -324,6 +363,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 4.5,
     fatPer100g: 2.4,
     carbsPer100g: 5.4,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 5,
   },
@@ -334,6 +374,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 12.8,
     fatPer100g: 11.4,
     carbsPer100g: 64.3,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 2,
   },
@@ -344,6 +385,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.1,
     fatPer100g: 94.2,
     carbsPer100g: 3.5,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 5,
   },
@@ -354,6 +396,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 41.4,
     fatPer100g: 3.7,
     carbsPer100g: 43.4,
+    baseAmount: 100,
     servingSize: "1枚",
     servingAmount: 1,
   },
@@ -364,6 +407,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 12.8,
     fatPer100g: 11.4,
     carbsPer100g: 64.3,
+    baseAmount: 100,
     servingSize: "小さじ1",
     servingAmount: 2,
   },
@@ -374,6 +418,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 20.3,
     fatPer100g: 54.2,
     carbsPer100g: 18.5,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 10,
   },
@@ -384,6 +429,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 19.1,
     fatPer100g: 1.0,
     carbsPer100g: 47.7,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 2,
   },
@@ -394,6 +440,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 77.1,
     fatPer100g: 5.7,
     carbsPer100g: 0.8,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 5,
   },
@@ -404,6 +451,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 7.4,
     fatPer100g: 47.5,
     carbsPer100g: 37.6,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 10,
   },
@@ -414,6 +462,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.0,
     fatPer100g: 100.0,
     carbsPer100g: 0.0,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 13,
   },
@@ -424,6 +473,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.0,
     fatPer100g: 100.0,
     carbsPer100g: 0.0,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 13,
   },
@@ -434,6 +484,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.0,
     fatPer100g: 100.0,
     carbsPer100g: 0.0,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 13,
   },
@@ -444,6 +495,7 @@ const SEED_INGREDIENTS: Ingredient[] = [
     proteinPer100g: 0.3,
     fatPer100g: 0.0,
     carbsPer100g: 43.2,
+    baseAmount: 100,
     servingSize: "大さじ1",
     servingAmount: 15,
   },
@@ -462,7 +514,7 @@ export const calculateItemCalories = (
   if (!item.ingredients) return 0;
   return Math.round(
     item.ingredients.reduce(
-      (sum, ing) => sum + (ing.amount * ing.caloriesPer100g) / 100,
+      (sum, ing) => sum + (ing.amount * ing.caloriesPer100g) / (ing.baseAmount || 100),
       0,
     ),
   );
@@ -478,7 +530,7 @@ export const calculateItemPFC = (
 
   const totals = item.ingredients.reduce(
     (acc, ing) => {
-      const multiplier = ing.amount / 100;
+      const multiplier = ing.amount / (ing.baseAmount || 100);
       acc.protein += ing.proteinPer100g * multiplier;
       acc.fat += ing.fatPer100g * multiplier;
       acc.carbs += ing.carbsPer100g * multiplier;

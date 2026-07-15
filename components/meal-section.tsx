@@ -1,7 +1,15 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView, TextInput } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { LogItem, Ingredient } from '@/constants/storage';
+import { Ingredient, LogItem, getUnit } from "@/constants/storage";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import React from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type MealType = {
   key: string;
@@ -22,7 +30,11 @@ type MealSectionProps = {
   colors: any;
   onToggleExpand: (itemId: string) => void;
   onDeleteLogItem: (itemId: string) => void;
-  onUpdateIngredientWeight: (logItemId: string, ingredientId: string, newWeight: number) => void;
+  onUpdateIngredientWeight: (
+    logItemId: string,
+    ingredientId: string,
+    newWeight: number,
+  ) => void;
   onDeleteIngredientFromLog: (logItemId: string, ingredientId: string) => void;
   onAddIngredientToLog: (logItemId: string) => void;
   onShowAddIngToRecipe: (itemId: string) => void;
@@ -58,21 +70,38 @@ export default function MealSection({
   onCopyPrevious,
 }: MealSectionProps) {
   return (
-    <View style={[styles.mealSectionCard, { backgroundColor: '#ffffff', borderColor: '#e5e5ea' }]}>
+    <View
+      style={[
+        styles.mealSectionCard,
+        { backgroundColor: "#ffffff", borderColor: "#e5e5ea" },
+      ]}
+    >
       {/* Section Header */}
       <View style={styles.mealHeader}>
         <View style={styles.mealTitleRow}>
-          <Ionicons name={meal.icon as any} size={20} color={meal.color} style={styles.mealIcon} />
-          <Text style={[styles.mealTitleText, { color: colors.text }]}>{meal.label}</Text>
+          <Ionicons
+            name={meal.icon as any}
+            size={20}
+            color={meal.color}
+            style={styles.mealIcon}
+          />
+          <Text style={[styles.mealTitleText, { color: colors.text }]}>
+            {meal.label}
+          </Text>
         </View>
         <View style={styles.mealHeaderRight}>
           <TouchableOpacity
             style={styles.copyPreviousBtn}
-            onPress={onCopyPrevious}>
+            onPress={onCopyPrevious}
+          >
             <Ionicons name="copy-outline" size={13} color={colors.tint} />
-            <Text style={[styles.copyPreviousText, { color: colors.tint }]}>前回のコピー</Text>
+            <Text style={[styles.copyPreviousText, { color: colors.tint }]}>
+              前回のコピー
+            </Text>
           </TouchableOpacity>
-          <Text style={[styles.mealSumText, { color: colors.text }]}>{mealSum} kcal</Text>
+          <Text style={[styles.mealSumText, { color: colors.text }]}>
+            {mealSum} kcal
+          </Text>
         </View>
       </View>
 
@@ -90,21 +119,23 @@ export default function MealSection({
                 key={item.id}
                 style={[
                   styles.logItemContainer,
-                  { borderBottomColor: '#f2f2f7' },
-                ]}>
+                  { borderBottomColor: "#f2f2f7" },
+                ]}
+              >
                 {/* Food Row Tappable Header */}
                 <TouchableOpacity
                   activeOpacity={0.7}
                   style={styles.logItemHeader}
                   onPress={() => {
-                    if (item.type === 'recipe') {
+                    if (item.type === "recipe") {
                       onToggleExpand(item.id);
                     }
-                  }}>
+                  }}
+                >
                   <View style={styles.logItemNameCol}>
-                    {item.type === 'recipe' && (
+                    {item.type === "recipe" && (
                       <Ionicons
-                        name={isExpanded ? 'chevron-down' : 'chevron-forward'}
+                        name={isExpanded ? "chevron-down" : "chevron-forward"}
                         size={14}
                         color={colors.icon}
                         style={styles.chevronIcon}
@@ -114,15 +145,25 @@ export default function MealSection({
                       style={[
                         styles.logItemName,
                         { color: colors.text },
-                        item.type === 'recipe' && { fontWeight: '600' },
+                        item.type === "recipe" && { fontWeight: "600" },
                       ]}
                       numberOfLines={1}
-                      ellipsizeMode="tail">
+                      ellipsizeMode="tail"
+                    >
                       {item.name}
                     </Text>
-                    {item.type === 'recipe' && (
-                      <View style={[styles.presetBadge, { backgroundColor: '#D1FAE5' }]}>
-                        <Text style={[styles.presetBadgeText, { color: '#065F46' }]}>レシピ</Text>
+                    {item.type === "recipe" && (
+                      <View
+                        style={[
+                          styles.presetBadge,
+                          { backgroundColor: "#D1FAE5" },
+                        ]}
+                      >
+                        <Text
+                          style={[styles.presetBadgeText, { color: "#065F46" }]}
+                        >
+                          レシピ
+                        </Text>
                       </View>
                     )}
                   </View>
@@ -132,21 +173,29 @@ export default function MealSection({
                         {item.calories} kcal
                       </Text>
                       {(item.protein > 0 || item.fat > 0 || item.carbs > 0) && (
-                        <Text style={[styles.logItemPFC, { color: colors.icon }]}>
-                          P:{Math.round(item.protein)}g F:{Math.round(item.fat)}g C:{Math.round(item.carbs)}g
+                        <Text
+                          style={[styles.logItemPFC, { color: colors.icon }]}
+                        >
+                          P:{Math.round(item.protein)}g F:{Math.round(item.fat)}
+                          g C:{Math.round(item.carbs)}g
                         </Text>
                       )}
                     </View>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => onDeleteLogItem(item.id)}>
-                      <Ionicons name="trash-outline" size={16} color="#ff453a" />
+                      onPress={() => onDeleteLogItem(item.id)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color="#ff453a"
+                      />
                     </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
 
                 {/* Ingredient Editor for Recipes */}
-                {item.type === 'recipe' && isExpanded && item.ingredients && (
+                {item.type === "recipe" && isExpanded && item.ingredients && (
                   <IngredientEditor
                     item={item}
                     showAddIngToRecipe={showAddIngToRecipe}
@@ -171,33 +220,33 @@ export default function MealSection({
       {/* Action Buttons */}
       <View style={styles.mealActions}>
         <TouchableOpacity
-          style={[
-            styles.mealActionBtn,
-            { backgroundColor: '#f2f2f7' },
-          ]}
-          onPress={onOpenManualModal}>
+          style={[styles.mealActionBtn, { backgroundColor: "#f2f2f7" }]}
+          onPress={onOpenManualModal}
+        >
           <Ionicons name="create-outline" size={14} color={colors.tint} />
-          <Text style={[styles.mealActionText, { color: colors.text }]}>手動追加</Text>
+          <Text style={[styles.mealActionText, { color: colors.text }]}>
+            手動追加
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.mealActionBtn,
-            { backgroundColor: '#f2f2f7' },
-          ]}
-          onPress={onOpenRecipeModal}>
+          style={[styles.mealActionBtn, { backgroundColor: "#f2f2f7" }]}
+          onPress={onOpenRecipeModal}
+        >
           <Ionicons name="list-outline" size={14} color={colors.tint} />
-          <Text style={[styles.mealActionText, { color: colors.text }]}>レシピ追加</Text>
+          <Text style={[styles.mealActionText, { color: colors.text }]}>
+            レシピ追加
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.mealActionBtn,
-            { backgroundColor: '#f2f2f7' },
-          ]}
-          onPress={onOpenProductModal}>
+          style={[styles.mealActionBtn, { backgroundColor: "#f2f2f7" }]}
+          onPress={onOpenProductModal}
+        >
           <Ionicons name="storefront-outline" size={14} color={colors.tint} />
-          <Text style={[styles.mealActionText, { color: colors.text }]}>市販品</Text>
+          <Text style={[styles.mealActionText, { color: colors.text }]}>
+            市販品
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -225,7 +274,11 @@ function IngredientEditor({
   recipeIngAmount: string;
   ingredients: Ingredient[];
   colors: any;
-  onUpdateIngredientWeight: (logItemId: string, ingredientId: string, newWeight: number) => void;
+  onUpdateIngredientWeight: (
+    logItemId: string,
+    ingredientId: string,
+    newWeight: number,
+  ) => void;
   onDeleteIngredientFromLog: (logItemId: string, ingredientId: string) => void;
   onAddIngredientToLog: (logItemId: string) => void;
   onShowAddIngToRecipe: (itemId: string) => void;
@@ -233,7 +286,7 @@ function IngredientEditor({
   onRecipeIngAmountChange: (text: string) => void;
 }) {
   return (
-    <View style={[styles.ingredientsContainer, { backgroundColor: '#F0FDF4' }]}>
+    <View style={[styles.ingredientsContainer, { backgroundColor: "#F0FDF4" }]}>
       <View style={styles.ingredientsHeaderRow}>
         <Text style={[styles.ingredientsTitle, { color: colors.icon }]}>
           📊 材料の編集（その日限定）
@@ -242,7 +295,8 @@ function IngredientEditor({
           style={[styles.addIngBtn, { backgroundColor: colors.tint }]}
           onPress={() => {
             onShowAddIngToRecipe(item.id);
-          }}>
+          }}
+        >
           <Ionicons name="add" size={14} color="#fff" />
           <Text style={styles.addIngBtnText}>材料追加</Text>
         </TouchableOpacity>
@@ -250,7 +304,12 @@ function IngredientEditor({
 
       {/* Add Ingredient Form */}
       {showAddIngToRecipe === item.id && (
-        <View style={[styles.addIngForm, { backgroundColor: '#fff', borderColor: colors.tint }]}>
+        <View
+          style={[
+            styles.addIngForm,
+            { backgroundColor: "#fff", borderColor: colors.tint },
+          ]}
+        >
           <Text style={[styles.addIngFormTitle, { color: colors.text }]}>
             新しい材料を追加
           </Text>
@@ -260,15 +319,21 @@ function IngredientEditor({
                 key={ing.id}
                 style={[
                   styles.ingSelectorItem,
-                  selectedIngForRecipe === ing.id && { backgroundColor: colors.tint },
+                  selectedIngForRecipe === ing.id && {
+                    backgroundColor: colors.tint,
+                  },
                 ]}
-                onPress={() => onSelectIngForRecipe(ing.id)}>
+                onPress={() => onSelectIngForRecipe(ing.id)}
+              >
                 <Text
                   style={{
-                    color: selectedIngForRecipe === ing.id ? '#fff' : colors.text,
-                    fontWeight: selectedIngForRecipe === ing.id ? 'bold' : 'normal',
-                  }}>
-                  {ing.name} ({ing.caloriesPer100g} kcal/100g)
+                    color:
+                      selectedIngForRecipe === ing.id ? "#fff" : colors.text,
+                    fontWeight:
+                      selectedIngForRecipe === ing.id ? "bold" : "normal",
+                  }}
+                >
+                  {ing.name} ({ing.caloriesPer100g} kcal/100{getUnit(ing)})
                 </Text>
               </TouchableOpacity>
             ))}
@@ -276,7 +341,15 @@ function IngredientEditor({
           <View style={styles.addIngAmountRow}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.tinyLabel, { color: colors.icon }]}>
-                量 (g)
+                量 (
+                {selectedIngForRecipe
+                  ? getUnit(
+                      ingredients.find(
+                        (i) => i.id === selectedIngForRecipe,
+                      ) ?? ({ baseUnit: "g" } as Ingredient),
+                    )
+                  : "g"}
+                )
               </Text>
               <TextInput
                 keyboardType="numeric"
@@ -289,14 +362,23 @@ function IngredientEditor({
             </View>
             <View style={styles.addIngActionRow}>
               <TouchableOpacity
-                style={[styles.addIngCancelBtn, { backgroundColor: '#e5e7eb' }]}
-                onPress={() => onShowAddIngToRecipe('')}>
-                <Text style={[styles.addIngBtnText, { color: colors.text }]}>キャンセル</Text>
+                style={[styles.addIngCancelBtn, { backgroundColor: "#e5e7eb" }]}
+                onPress={() => onShowAddIngToRecipe("")}
+              >
+                <Text style={[styles.addIngBtnText, { color: colors.text }]}>
+                  キャンセル
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.addIngConfirmBtn, { backgroundColor: colors.tint }]}
-                onPress={() => onAddIngredientToLog(item.id)}>
-                <Text style={[styles.addIngBtnText, { color: '#fff' }]}>追加</Text>
+                style={[
+                  styles.addIngConfirmBtn,
+                  { backgroundColor: colors.tint },
+                ]}
+                onPress={() => onAddIngredientToLog(item.id)}
+              >
+                <Text style={[styles.addIngBtnText, { color: "#fff" }]}>
+                  追加
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -305,18 +387,25 @@ function IngredientEditor({
 
       {/* Ingredient List */}
       {item.ingredients?.map((ing, index) => {
+        const unit = ing.baseUnit ?? "g";
         const calcKcal = Math.round((ing.amount * ing.caloriesPer100g) / 100);
         return (
-          <View key={`${ing.ingredientId}-${index}`} style={styles.ingredientRow}>
+          <View
+            key={`${ing.ingredientId}-${index}`}
+            style={styles.ingredientRow}
+          >
             {/* Top Row: Name and Calories */}
             <View style={styles.ingTopRow}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.ingName, { color: colors.text }]}>{ing.name}</Text>
+                <Text style={[styles.ingName, { color: colors.text }]}>
+                  {ing.name}
+                </Text>
                 <Text style={[styles.ingKcalDetail, { color: colors.icon }]}>
-                  {ing.caloriesPer100g} kcal/100g
+                  {ing.caloriesPer100g} kcal/100{unit}
                 </Text>
                 <Text style={[styles.ingPfcDetail, { color: colors.icon }]}>
-                  P:{ing.proteinPer100g}g F:{ing.fatPer100g}g C:{ing.carbsPer100g}g
+                  P:{ing.proteinPer100g}g F:{ing.fatPer100g}g C:
+                  {ing.carbsPer100g}g
                 </Text>
               </View>
               <View style={styles.ingSubTotalCol}>
@@ -328,7 +417,10 @@ function IngredientEditor({
                 </Text>
                 <TouchableOpacity
                   style={styles.ingDeleteBtn}
-                  onPress={() => onDeleteIngredientFromLog(item.id, ing.ingredientId)}>
+                  onPress={() =>
+                    onDeleteIngredientFromLog(item.id, ing.ingredientId)
+                  }
+                >
                   <Ionicons name="close-circle" size={18} color="#EF4444" />
                 </TouchableOpacity>
               </View>
@@ -339,16 +431,30 @@ function IngredientEditor({
               <TouchableOpacity
                 style={styles.stepperBtn}
                 onPress={() =>
-                  onUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount - 10)
-                }>
-                <Text style={[styles.stepperBtnText, { color: colors.text }]}>-10g</Text>
+                  onUpdateIngredientWeight(
+                    item.id,
+                    ing.ingredientId,
+                    ing.amount - 10,
+                  )
+                }
+              >
+                <Text style={[styles.stepperBtnText, { color: colors.text }]}>
+                  -10{unit}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.stepperBtn}
                 onPress={() =>
-                  onUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount - 1)
-                }>
-                <Text style={[styles.stepperBtnText, { color: colors.text }]}>-1g</Text>
+                  onUpdateIngredientWeight(
+                    item.id,
+                    ing.ingredientId,
+                    ing.amount - 1,
+                  )
+                }
+              >
+                <Text style={[styles.stepperBtnText, { color: colors.text }]}>
+                  -1{unit}
+                </Text>
               </TouchableOpacity>
 
               <View style={styles.weightInputBg}>
@@ -361,26 +467,42 @@ function IngredientEditor({
                     onUpdateIngredientWeight(
                       item.id,
                       ing.ingredientId,
-                      isNaN(parsed) ? 0 : parsed
+                      isNaN(parsed) ? 0 : parsed,
                     );
                   }}
                 />
-                <Text style={[styles.weightUnitText, { color: colors.icon }]}>g</Text>
+                <Text style={[styles.weightUnitText, { color: colors.icon }]}>
+                  {unit}
+                </Text>
               </View>
 
               <TouchableOpacity
                 style={styles.stepperBtn}
                 onPress={() =>
-                  onUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount + 1)
-                }>
-                <Text style={[styles.stepperBtnText, { color: colors.text }]}>+1g</Text>
+                  onUpdateIngredientWeight(
+                    item.id,
+                    ing.ingredientId,
+                    ing.amount + 1,
+                  )
+                }
+              >
+                <Text style={[styles.stepperBtnText, { color: colors.text }]}>
+                  +1{unit}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.stepperBtn}
                 onPress={() =>
-                  onUpdateIngredientWeight(item.id, ing.ingredientId, ing.amount + 10)
-                }>
-                <Text style={[styles.stepperBtnText, { color: colors.text }]}>+10g</Text>
+                  onUpdateIngredientWeight(
+                    item.id,
+                    ing.ingredientId,
+                    ing.amount + 10,
+                  )
+                }
+              >
+                <Text style={[styles.stepperBtnText, { color: colors.text }]}>
+                  +10{unit}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -398,7 +520,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.03,
         shadowRadius: 5,
@@ -409,65 +531,65 @@ const styles = StyleSheet.create({
     }),
   },
   mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   mealTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   mealHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   copyPreviousBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: '#f2f2f7',
+    backgroundColor: "#f2f2f7",
   },
   copyPreviousText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   mealIcon: {
     marginRight: 8,
   },
   mealTitleText: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   mealSumText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   mealItemsList: {
     marginBottom: 12,
   },
   emptySectionText: {
     fontSize: 13,
-    textAlign: 'left',
+    textAlign: "left",
     paddingVertical: 10,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   logItemContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: 12,
   },
   logItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   logItemNameCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
     paddingRight: 10,
   },
@@ -476,7 +598,7 @@ const styles = StyleSheet.create({
   },
   logItemName: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: "500",
     flexShrink: 1,
   },
   presetBadge: {
@@ -487,15 +609,15 @@ const styles = StyleSheet.create({
   },
   presetBadgeText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   logItemActionCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   logItemCal: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     marginRight: 12,
   },
   deleteButton: {
@@ -503,7 +625,7 @@ const styles = StyleSheet.create({
   },
   logItemPFC: {
     fontSize: 9,
-    fontWeight: '500',
+    fontWeight: "500",
     marginTop: 2,
   },
   ingredientsContainer: {
@@ -512,27 +634,27 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   ingredientsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   ingredientsTitle: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   addIngBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
     gap: 4,
   },
   addIngBtnText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   addIngForm: {
     borderRadius: 12,
@@ -543,32 +665,32 @@ const styles = StyleSheet.create({
   },
   addIngFormTitle: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   tinyLabel: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   ingSelectorList: {
     maxHeight: 120,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   ingSelectorItem: {
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#f2f2f7',
+    borderBottomColor: "#f2f2f7",
   },
   addIngAmountRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addIngActionRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 8,
   },
@@ -583,28 +705,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   ingredientRow: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
+    flexDirection: "column",
+    alignItems: "stretch",
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(120,120,128,0.1)',
+    borderBottomColor: "rgba(120,120,128,0.1)",
   },
   ingTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   ingBottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 8,
     marginTop: 4,
   },
   ingName: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   ingKcalDetail: {
     fontSize: 10,
@@ -615,8 +737,8 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   ingSubTotalCol: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
+    alignItems: "flex-end",
+    flexDirection: "row",
     gap: 8,
   },
   ingSubTotalPFC: {
@@ -630,55 +752,55 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: "#e5e7eb",
   },
   stepperBtnText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   weightInputBg: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 6,
     height: 28,
     width: 66,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   weightInput: {
     fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     flex: 1,
     padding: 0,
   },
   weightUnitText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   ingSubTotalCal: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   mealActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 4,
   },
   mealActionBtn: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 8,
     borderRadius: 10,
     gap: 4,
   },
   mealActionText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   formInput: {
     borderRadius: 12,

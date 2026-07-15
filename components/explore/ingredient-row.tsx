@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/theme";
-import { Ingredient } from "@/constants/storage";
+import { Ingredient, getUnit, getBaseAmount, getBasisCalories } from "@/constants/storage";
 
 interface IngredientRowProps {
   ingredient: Ingredient;
@@ -35,7 +35,8 @@ export function IngredientRow({
           {ingredient.name}
         </Text>
         <Text style={[styles.tableCalText, { color: colors.icon }]}>
-          {ingredient.caloriesPer100g} kcal / 100g
+          {getBasisCalories(ingredient)} kcal / {getBaseAmount(ingredient)}
+          {getUnit(ingredient)}
         </Text>
         <Text style={[styles.tablePfcText, { color: colors.icon }]}>
           P: {ingredient.proteinPer100g}g / F: {ingredient.fatPer100g}g / C:{" "}
@@ -43,7 +44,8 @@ export function IngredientRow({
         </Text>
         {ingredient.servingSize && (
           <Text style={[styles.tableServingText, { color: colors.icon }]}>
-            目安: {ingredient.servingSize} ({ingredient.servingAmount}g)
+            目安: {ingredient.servingSize} ({ingredient.servingAmount}
+            {getUnit(ingredient)})
           </Text>
         )}
       </View>

@@ -116,8 +116,7 @@ export default function ManualAddModal({
                     borderColor: "#e5e5ea",
                   },
                 ]}
-                keyboardType="numeric"
-                placeholder="例: 350"
+                placeholder="例: 350 または 175*2"
                 placeholderTextColor={colors.icon}
                 value={manualCalories}
                 onChangeText={onCaloriesChange}
@@ -135,8 +134,7 @@ export default function ManualAddModal({
                     borderColor: "#e5e5ea",
                   },
                 ]}
-                keyboardType="numeric"
-                placeholder="例: 25"
+                placeholder="例: 25 または 12.5*2"
                 placeholderTextColor={colors.icon}
                 value={manualProtein}
                 onChangeText={onProteinChange}
@@ -154,8 +152,7 @@ export default function ManualAddModal({
                     borderColor: "#e5e5ea",
                   },
                 ]}
-                keyboardType="numeric"
-                placeholder="例: 10"
+                placeholder="例: 10 または 5*2"
                 placeholderTextColor={colors.icon}
                 value={manualFat}
                 onChangeText={onFatChange}
@@ -173,8 +170,7 @@ export default function ManualAddModal({
                     borderColor: "#e5e5ea",
                   },
                 ]}
-                keyboardType="numeric"
-                placeholder="例: 40"
+                placeholder="例: 40 または 20*2"
                 placeholderTextColor={colors.icon}
                 value={manualCarbs}
                 onChangeText={onCarbsChange}

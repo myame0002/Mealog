@@ -157,6 +157,7 @@ export default function RecipeAddModal({
                       proteinPer100g: matched ? matched.proteinPer100g : 0,
                       fatPer100g: matched ? matched.fatPer100g : 0,
                       carbsPer100g: matched ? matched.carbsPer100g : 0,
+                      baseAmount: matched?.baseAmount ?? 100,
                     };
                   }),
                 };

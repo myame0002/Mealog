@@ -39,6 +39,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { calculateValue } from "@/utils/calculate";
 
 const MEAL_TYPES = [
   { key: "breakfast", label: "朝食", icon: "sunny", color: "#FF9500" },
@@ -202,18 +203,18 @@ export default function HomeScreen() {
       return;
     }
 
-    const kcal = parseInt(manualCalories, 10);
+    const kcal = Math.round(calculateValue(manualCalories));
     if (isNaN(kcal) || kcal < 0) {
-      Alert.alert("入力エラー", "カロリーには正しい数値を入力してください。");
+      Alert.alert("入力エラー", "カロリーには正しい数値または計算式を入力してください。");
       return;
     }
 
-    const protein = manualProtein.trim() ? parseFloat(manualProtein) : 0;
-    const fat = manualFat.trim() ? parseFloat(manualFat) : 0;
-    const carbs = manualCarbs.trim() ? parseFloat(manualCarbs) : 0;
+    const protein = calculateValue(manualProtein);
+    const fat = calculateValue(manualFat);
+    const carbs = calculateValue(manualCarbs);
 
     if (isNaN(protein) || isNaN(fat) || isNaN(carbs)) {
-      Alert.alert("入力エラー", "PFCには正しい数値を入力してください。");
+      Alert.alert("入力エラー", "PFCには正しい数値または計算式を入力してください。");
       return;
     }
 
@@ -276,6 +277,8 @@ export default function HomeScreen() {
         proteinPer100g: matchedIng ? matchedIng.proteinPer100g : 0,
         fatPer100g: matchedIng ? matchedIng.fatPer100g : 0,
         carbsPer100g: matchedIng ? matchedIng.carbsPer100g : 0,
+        baseAmount: matchedIng?.baseAmount ?? 100,
+        baseUnit: matchedIng?.baseUnit ?? "g",
       };
     });
 
@@ -492,6 +495,7 @@ export default function HomeScreen() {
           proteinPer100g: matchedIng.proteinPer100g,
           fatPer100g: matchedIng.fatPer100g,
           carbsPer100g: matchedIng.carbsPer100g,
+          baseAmount: matchedIng.baseAmount ?? 100,
         };
         updatedIngs = log.ingredients ? [...log.ingredients, newIng] : [newIng];
       }

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/theme";
+import { calculateValue } from "@/utils/calculate";
 import {
   deleteIngredient,
   deleteRecipe,
@@ -61,6 +62,8 @@ export default function ExploreScreen() {
   const [ingProtein, setIngProtein] = useState("");
   const [ingFat, setIngFat] = useState("");
   const [ingCarbs, setIngCarbs] = useState("");
+  const [ingBaseAmount, setIngBaseAmount] = useState("100");
+  const [ingBaseUnit, setIngBaseUnit] = useState<"g" | "ml">("g");
   const [ingServingSize, setIngServingSize] = useState("");
   const [ingServingAmount, setIngServingAmount] = useState("");
 
@@ -114,6 +117,8 @@ export default function ExploreScreen() {
     setIngProtein("");
     setIngFat("");
     setIngCarbs("");
+    setIngBaseAmount("100");
+    setIngBaseUnit("g");
     setIngServingSize("");
     setIngServingAmount("");
     setIngModalVisible(true);
@@ -126,6 +131,8 @@ export default function ExploreScreen() {
     setIngProtein(String(ing.proteinPer100g));
     setIngFat(String(ing.fatPer100g));
     setIngCarbs(String(ing.carbsPer100g));
+    setIngBaseAmount(String(ing.baseAmount ?? 100));
+    setIngBaseUnit(ing.baseUnit ?? "g");
     setIngServingSize(ing.servingSize || "");
     setIngServingAmount(ing.servingAmount ? String(ing.servingAmount) : "");
     setIngModalVisible(true);
@@ -137,20 +144,22 @@ export default function ExploreScreen() {
       return;
     }
 
-    const kcal = parseInt(ingCalories, 10);
+    const kcal = Math.round(calculateValue(ingCalories));
     if (isNaN(kcal) || kcal < 0) {
-      Alert.alert("入力エラー", "カロリーには正しい数値を入力してください。");
+      Alert.alert("入力エラー", "カロリーには正しい数値または計算式を入力してください。");
       return;
     }
 
-    const protein = ingProtein.trim() ? parseFloat(ingProtein) : 0;
-    const fat = ingFat.trim() ? parseFloat(ingFat) : 0;
-    const carbs = ingCarbs.trim() ? parseFloat(ingCarbs) : 0;
+    const protein = calculateValue(ingProtein);
+    const fat = calculateValue(ingFat);
+    const carbs = calculateValue(ingCarbs);
 
     if (isNaN(protein) || isNaN(fat) || isNaN(carbs)) {
-      Alert.alert("入力エラー", "PFCには正しい数値を入力してください。");
+      Alert.alert("入力エラー", "PFCには正しい数値または計算式を入力してください。");
       return;
     }
+
+    const baseAmountNum = ingBaseAmount.trim() ? Math.round(parseFloat(ingBaseAmount)) || 100 : 100;
 
     const ing: Ingredient = {
       id: editingIngredientId || `ing_${Date.now()}`,
@@ -159,6 +168,8 @@ export default function ExploreScreen() {
       proteinPer100g: protein,
       fatPer100g: fat,
       carbsPer100g: carbs,
+      baseAmount: baseAmountNum,
+      baseUnit: ingBaseUnit,
       ...(ingServingSize.trim() && { servingSize: ingServingSize.trim() }),
       ...(ingServingAmount.trim() && { servingAmount: parseFloat(ingServingAmount) }),
     };
@@ -505,10 +516,10 @@ export default function ExploreScreen() {
         editingIngredient={editingIngredientId ? {
           id: editingIngredientId,
           name: ingName,
-          caloriesPer100g: parseInt(ingCalories) || 0,
-          proteinPer100g: parseFloat(ingProtein) || 0,
-          fatPer100g: parseFloat(ingFat) || 0,
-          carbsPer100g: parseFloat(ingCarbs) || 0,
+          caloriesPer100g: Math.round(calculateValue(ingCalories)) || 0,
+          proteinPer100g: calculateValue(ingProtein) || 0,
+          fatPer100g: calculateValue(ingFat) || 0,
+          carbsPer100g: calculateValue(ingCarbs) || 0,
           ...(ingServingSize.trim() && { servingSize: ingServingSize.trim() }),
           ...(ingServingAmount.trim() && { servingAmount: parseFloat(ingServingAmount) }),
         } : null}
@@ -518,6 +529,8 @@ export default function ExploreScreen() {
           protein: ingProtein,
           fat: ingFat,
           carbs: ingCarbs,
+          baseAmount: ingBaseAmount,
+          baseUnit: ingBaseUnit,
           servingSize: ingServingSize,
           servingAmount: ingServingAmount,
         }}
@@ -530,6 +543,8 @@ export default function ExploreScreen() {
             case "protein": setIngProtein(value); break;
             case "fat": setIngFat(value); break;
             case "carbs": setIngCarbs(value); break;
+            case "baseAmount": setIngBaseAmount(value); break;
+            case "baseUnit": setIngBaseUnit(value as "g" | "ml"); break;
             case "servingSize": setIngServingSize(value); break;
             case "servingAmount": setIngServingAmount(value); break;
           }

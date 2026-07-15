@@ -1,4 +1,4 @@
-import { Ingredient, Recipe, RecipeIngredient } from "@/constants/storage";
+import { Ingredient, Recipe, RecipeIngredient, getUnit } from "@/constants/storage";
 import { Colors } from "@/constants/theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useState } from "react";
@@ -167,8 +167,9 @@ export function RecipeBuilderModal({
               ) : (
                 selectedIngredients.map((ri) => {
                   const ing = ingredients.find((i) => i.id === ri.ingredientId);
+                  const unit = ing ? getUnit(ing) : "g";
                   const kcal = Math.round(
-                    (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
+                    (ri.baseAmount * (ing?.caloriesPer100g || 0)) / (ing?.baseAmount ?? 100),
                   );
                   const isEditing = editingIngWeightId === ri.ingredientId;
                   return (
@@ -193,7 +194,7 @@ export function RecipeBuilderModal({
                                 )
                               }
                             >
-                              <Text style={styles.inlineStepperText}>-10g</Text>
+                              <Text style={styles.inlineStepperText}>-10{unit}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
@@ -204,7 +205,7 @@ export function RecipeBuilderModal({
                                 )
                               }
                             >
-                              <Text style={styles.inlineStepperText}>-1g</Text>
+                              <Text style={styles.inlineStepperText}>-1{unit}</Text>
                             </TouchableOpacity>
                             <TextInput
                               keyboardType="numeric"
@@ -222,7 +223,7 @@ export function RecipeBuilderModal({
                                 { color: colors.icon },
                               ]}
                             >
-                              g
+                              {unit}
                             </Text>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
@@ -233,7 +234,7 @@ export function RecipeBuilderModal({
                                 )
                               }
                             >
-                              <Text style={styles.inlineStepperText}>+1g</Text>
+                              <Text style={styles.inlineStepperText}>+1{unit}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                               style={styles.inlineStepperBtn}
@@ -244,7 +245,7 @@ export function RecipeBuilderModal({
                                 )
                               }
                             >
-                              <Text style={styles.inlineStepperText}>+10g</Text>
+                              <Text style={styles.inlineStepperText}>+10{unit}</Text>
                             </TouchableOpacity>
                           </View>
                         ) : (
@@ -254,7 +255,7 @@ export function RecipeBuilderModal({
                               { color: colors.icon },
                             ]}
                           >
-                            {ri.baseAmount}g ({kcal} kcal)
+                            {ri.baseAmount}{unit} ({kcal} kcal)
                           </Text>
                         )}
                       </View>
@@ -404,7 +405,7 @@ export function RecipeBuilderModal({
                                     }}
                                   >
                                     目安: {ing.servingSize} ({ing.servingAmount}
-                                    g)
+                                    {getUnit(ing)})
                                   </Text>
                                 )}
                               </View>
@@ -418,7 +419,15 @@ export function RecipeBuilderModal({
                 <View style={styles.builderQtyRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.tinyLabel, { color: colors.icon }]}>
-                      基本グラム数 (g)
+                      基本量 (
+                      {builderSelectedIngId
+                        ? getUnit(
+                            ingredients.find(
+                              (i) => i.id === builderSelectedIngId,
+                            ) ?? ({ baseUnit: "g" } as Ingredient),
+                          )
+                        : "g"}
+                      )
                     </Text>
                     <TextInput
                       keyboardType="numeric"

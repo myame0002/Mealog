@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/theme";
-import { Recipe, Ingredient } from "@/constants/storage";
+import { Recipe, Ingredient, getUnit } from "@/constants/storage";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -18,7 +18,8 @@ export function RecipeCard({ recipe, ingredients, onEdit, onDelete }: RecipeCard
   const defaultCalories = Math.round(
     recipe.ingredients.reduce((sum, ri) => {
       const ing = ingredients.find((i) => i.id === ri.ingredientId);
-      return sum + (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100;
+      const base = ing?.baseAmount ?? 100;
+      return sum + (ri.baseAmount * (ing?.caloriesPer100g || 0)) / base;
     }, 0),
   );
 
@@ -72,8 +73,9 @@ export function RecipeCard({ recipe, ingredients, onEdit, onDelete }: RecipeCard
           const ing = ingredients.find(
             (i) => i.id === ri.ingredientId,
           );
+          const unit = ing ? getUnit(ing) : "g";
           const kcal = Math.round(
-            (ri.baseAmount * (ing?.caloriesPer100g || 0)) / 100,
+            (ri.baseAmount * (ing?.caloriesPer100g || 0)) / (ing?.baseAmount ?? 100),
           );
           return (
             <View key={ri.ingredientId} style={styles.ingRowDetail}>
@@ -85,7 +87,7 @@ export function RecipeCard({ recipe, ingredients, onEdit, onDelete }: RecipeCard
               <Text
                 style={[styles.ingRowAmt, { color: colors.icon }]}
               >
-                {ri.baseAmount}g ({kcal} kcal)
+                {ri.baseAmount}{unit} ({kcal} kcal)
               </Text>
             </View>
           );
